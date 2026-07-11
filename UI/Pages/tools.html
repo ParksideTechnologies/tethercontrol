@@ -1,0 +1,530 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="/favicon.ico" />
+  <title>Tools - Tether Control</title>
+  <style>
+    :root {
+      --page-width: 1280px;
+      --card: #f8fcff;
+      --line: #bfd8ea;
+      --ink: #173247;
+      --muted: #5e7b92;
+      --accent: #3b87c8;
+      --accent-2: #66b3e6;
+      --nav-bg: #e2eef8;
+      --ok-bg: #d9f2da;
+      --ok-line: #5f9f68;
+      --bad-bg: #f8ddd7;
+      --bad-line: #c56b56;
+      --dialog-backdrop: rgba(23, 50, 71, 0.42);
+    }
+    body { font-family: "Segoe UI", Tahoma, sans-serif; margin: 0; overflow-x: auto; color: var(--ink); background: #ffffff; }
+    .page { width: var(--page-width); min-width: var(--page-width); max-width: var(--page-width); margin: 24px auto; }
+    .card, .box { width: 100%; max-width: 100%; box-sizing: border-box; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: color-mix(in srgb, var(--card) 96%, white); }
+    .box + .box { margin-top: 12px; }
+    .banner { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; padding: 10px 16px; border-radius: 14px; font-weight: 600; display:flex; justify-content:space-between; align-items:center; }
+    .nav { display:flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 12px 0; }
+    .nav a { text-decoration: none; }
+    .nav .navBtn { display:inline-block; padding: 4px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--nav-bg); color: var(--ink); }
+    .page-title-row { position:relative; min-height:42px; display:flex; align-items:center; margin: 0 0 16px; }
+    .page-title-row h1 { margin:0; }
+    .licence-warning { position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); color:var(--ink); background:var(--bad-bg); border:1px solid var(--bad-line); border-radius:999px; padding:4px 14px; font-weight:800; font-size:20px; text-align:center; white-space:nowrap; }
+    .licence-warning.hidden { display:none; }
+    .row { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .section-head { margin:0 0 10px 0; }
+    .muted { color: var(--muted); font-size: 0.95em; }
+    .fileInputHidden { display:none; }
+    .fileName { min-width: 280px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 10px; background: white; color: var(--muted); }
+    input, select, button { font: inherit; }
+    input, select { border: 1px solid var(--line); border-radius: 10px; background: white; color: var(--ink); padding: 4px 8px; }
+    button { padding: 4px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--nav-bg); color: var(--ink); cursor: pointer; }
+    button:hover { background: #d8ecfb; border-color: var(--accent); }
+    button:active { transform: translateY(1px); }
+    button:disabled { cursor: not-allowed; opacity: 0.55; }
+    .status-ok { color: #1f5e33; }
+    .status-bad { color: #7a1f1f; }
+    .modal-result:not(:empty) { padding: 4px 10px; border-radius: 10px; font-weight: 600; }
+    .modal-result.status-ok { background: var(--ok-bg); border: 1px solid var(--ok-line); }
+    .modal-result.status-bad { background: var(--bad-bg); border: 1px solid var(--bad-line); }
+    .tool-actions { justify-content:flex-end; margin-top:12px; }
+    .selection-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; margin: 10px 0; }
+    .selection-grid label { display:flex; gap:8px; align-items:center; padding:5px 7px; border:1px solid #dceaf5; border-radius:10px; background:white; }
+    .dialog-note { max-width: 620px; line-height:1.4; }
+    dialog { border: 1px solid var(--line); border-radius: 18px; padding: 16px; background: color-mix(in srgb, var(--card) 97%, white); color: var(--ink); min-width: 560px; max-width: 90vw; }
+    dialog::backdrop { background: var(--dialog-backdrop); }
+    dialog h3 { margin:0 0 10px 0; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="banner"><span>Tether Control</span><span>{{APP_VERSION}}</span></div>
+    <div class="nav">
+      <a class="navBtn" href="/">Configuration</a>
+      <a class="navBtn" href="/controls">C-Bus Group Setup</a>
+      <a class="navBtn" href="/tools">Tools</a>
+      <a class="navBtn" href="/help">Help</a>
+    </div>
+    <div class="page-title-row">
+      <h1>Tools</h1>
+      <span id="licenceWarning" class="licence-warning hidden">Failure: Licence key is invalid.</span>
+    </div>
+    <div class="card">
+      <div class="box">
+        <p class="section-head"><b>Import C-Bus Groups</b></p>
+        <p class="muted">Import groups from Toolkit XML or HTML documents and compatible Node-RED flows JSON files. Imported entries are merged after confirmation.</p>
+        <div class="row">
+          <input id="groupImportFile" class="fileInputHidden" type="file" accept=".xml,.json,.html,.htm,application/json,text/json,text/html" />
+          <button id="groupChooseBtn" type="button">Choose File</button>
+          <span id="groupFileName" class="fileName">No file chosen</span>
+          <button id="groupImportBtn" type="button">Import C-Bus Groups</button>
+          <span id="groupImportMsg" class="muted"></span>
+        </div>
+      </div>
+
+      <div class="box">
+        <p class="section-head"><b>Configuration Export And Import</b></p>
+        <p class="muted">Export selected configuration sections or restore them from a Tether Control configuration file.</p>
+        <div class="row">
+          <input id="configImportFile" class="fileInputHidden" type="file" accept=".json,application/json" />
+          <button id="configImportChooseBtn" type="button">Import Configuration</button>
+          <button id="configExportBtn" type="button">Export Configuration</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="exportDialog">
+    <h3>Export Configuration</h3>
+    <p class="dialog-note muted">Select the sections to include.</p>
+    <label><input id="exportAll" type="checkbox" checked /> Select All</label>
+    <div class="selection-grid" id="exportSections">
+      <label><input type="checkbox" value="applications" checked /> C-Bus Applications</label>
+      <label><input type="checkbox" value="controls" checked /> C-Bus Group Setup</label>
+      <label><input type="checkbox" value="mqtt" checked /> MQTT Broker</label>
+      <label><input type="checkbox" value="time" checked /> Network Time Manager</label>
+      <label><input type="checkbox" value="interfaces" checked /> Interface</label>
+    </div>
+    <div class="row tool-actions">
+      <span id="exportResult" class="muted modal-result"></span>
+      <span style="flex:1;"></span>
+      <button id="exportCancelBtn" type="button">Cancel</button>
+      <button id="exportConfirmBtn" type="button">Export</button>
+    </div>
+  </dialog>
+
+  <dialog id="configImportDialog">
+    <h3>Import Configuration</h3>
+    <p id="configImportFileSummary" class="dialog-note"></p>
+    <div class="selection-grid" id="importSections">
+      <label><input type="checkbox" value="applications" /> C-Bus Applications</label>
+      <label><input type="checkbox" value="controls" /> C-Bus Group Setup</label>
+      <label><input type="checkbox" value="mqtt" /> MQTT Broker</label>
+      <label><input type="checkbox" value="time" /> Network Time Manager</label>
+      <label><input type="checkbox" value="interfaces" /> Interface</label>
+    </div>
+    <div class="row">
+      <span>C-Bus Group Setup:</span>
+      <select id="controlsImportMode">
+        <option value="merge">Merge with existing</option>
+        <option value="replace">Replace existing</option>
+      </select>
+    </div>
+    <div class="row tool-actions">
+      <span id="configImportResult" class="muted modal-result"></span>
+      <span style="flex:1;"></span>
+      <button id="configImportCancelBtn" type="button">Cancel</button>
+      <button id="configImportConfirmBtn" type="button">Import</button>
+    </div>
+  </dialog>
+
+  <dialog id="groupImportDialog">
+    <h3>Import C-Bus Groups</h3>
+    <p id="groupImportSummary" class="dialog-note"></p>
+    <p class="dialog-note muted">Existing address assignments and entity names take priority.</p>
+    <div class="row tool-actions">
+      <span id="groupImportResult" class="muted modal-result"></span>
+      <span style="flex:1;"></span>
+      <button id="groupImportCancelBtn" type="button">Cancel</button>
+      <button id="groupImportConfirmBtn" type="button">Import</button>
+    </div>
+  </dialog>
+
+  <script>
+  (() => {
+    const CONFIG_FORMAT = 'tether-control-config';
+    const CONFIG_SCHEMA_VERSION = 1;
+    const APP_VERSION = '{{APP_VERSION}}';
+    let pendingConfigImport = null;
+    let pendingGroupImport = null;
+
+    function openDialog(dialog){
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', 'open');
+    }
+
+    function closeDialog(dialog){
+      if (typeof dialog.close === 'function') dialog.close();
+      else dialog.removeAttribute('open');
+    }
+
+    async function fetchJson(url, options){
+      const response = await fetch(url, options);
+      let payload = {};
+      try { payload = await response.json(); } catch {}
+      if (!response.ok) throw new Error(payload?.error || ('HTTP ' + response.status));
+      return payload;
+    }
+
+    async function updateLicenceWarning(){
+      const warning = document.getElementById('licenceWarning');
+      if (!warning) return;
+      try{
+        const stats = await fetchJson('/api/stats', { cache: 'no-store' });
+        const licence = stats.licence || {};
+        if (licence.isValid){
+          warning.classList.add('hidden');
+        } else {
+          warning.textContent = 'Failure: Licence key is invalid.';
+          warning.classList.remove('hidden');
+        }
+      }catch{
+        // Leave the last visible state unchanged.
+      }
+    }
+
+    function setMessage(element, text, ok = false){
+      element.textContent = text;
+      element.classList.toggle('status-ok', ok);
+      element.classList.toggle('status-bad', !!text && !ok);
+    }
+
+    function selectedValues(container){
+      return Array.from(container.querySelectorAll('input[type="checkbox"]:checked:not(:disabled)')).map(input => input.value);
+    }
+
+    function downloadJson(value, fileName){
+      const blob = new Blob([JSON.stringify(value, null, 2) + '\n'], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+
+    function timestampForFile(){
+      const now = new Date();
+      const pad = value => String(value).padStart(2, '0');
+      return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    }
+
+    async function buildExport(sectionNames){
+      const sections = {};
+      if (sectionNames.includes('applications')){
+        sections.applications = (await fetchJson('/config/core', { cache: 'no-store' })).apps || [];
+      }
+      if (sectionNames.includes('controls')){
+        sections.controls = (await fetchJson('/config/controls', { cache: 'no-store' })).controls || [];
+      }
+      if (sectionNames.includes('mqtt')){
+        const mqtt = await fetchJson('/config/mqtt', { cache: 'no-store' });
+        sections.mqtt = {
+          host: mqtt.host || '',
+          port: Number(mqtt.port || 1883)
+        };
+      }
+      if (sectionNames.includes('time')){
+        sections.time = await fetchJson('/config/time', { cache: 'no-store' });
+      }
+      if (sectionNames.includes('interfaces')){
+        const interfaces = await fetchJson('/config/interfaces', { cache: 'no-store' });
+        const stats = await fetchJson('/api/stats', { cache: 'no-store' });
+        sections.interfaces = {
+          mode: stats.mode || 'control',
+          interfaces: interfaces.interfaces || []
+        };
+      }
+      return {
+        format: CONFIG_FORMAT,
+        schemaVersion: CONFIG_SCHEMA_VERSION,
+        exportedAt: new Date().toISOString(),
+        sourceVersion: APP_VERSION,
+        containsCredentials: false,
+        sections
+      };
+    }
+
+    function normaliseFunction(device){
+      return (device?.function || 'control').toString().trim().toLowerCase();
+    }
+
+    function addressKey(device){
+      const func = normaliseFunction(device);
+      if (func === 'measurement')
+        return `${func}:${Number(device?.unitId || 0)}:${Number(device?.channel || 0)}`;
+      return `${func}:${Number(device?.app || 0)}:${Number(device?.group || 0)}`;
+    }
+
+    function entityNameKey(device){
+      return (device?.deviceName || device?.name || '').toString().trim().replaceAll(' ', '_').toLowerCase();
+    }
+
+    function mergeControls(existing, incoming){
+      const merged = [...existing];
+      const addresses = new Set(existing.map(addressKey));
+      const names = new Set(existing.map(entityNameKey).filter(Boolean));
+      let skipped = 0;
+      for (const device of incoming){
+        const address = addressKey(device);
+        const name = entityNameKey(device);
+        if (addresses.has(address) || (name && names.has(name))){
+          skipped++;
+          continue;
+        }
+        merged.push(device);
+        addresses.add(address);
+        if (name) names.add(name);
+      }
+      return { controls: merged, added: merged.length - existing.length, skipped };
+    }
+
+    async function importConfiguration(){
+      const sectionsToImport = selectedValues(document.getElementById('importSections'));
+      if (!sectionsToImport.length) throw new Error('Select at least one section.');
+      const source = pendingConfigImport?.sections || {};
+
+      if (sectionsToImport.includes('applications')){
+        await fetchJson('/config/core', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apps: source.applications || [] })
+        });
+      }
+      if (sectionsToImport.includes('mqtt')){
+        const current = await fetchJson('/config/mqtt', { cache: 'no-store' });
+        await fetchJson('/config/mqtt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            host: source.mqtt?.host || current.host || '',
+            port: Number(source.mqtt?.port || current.port || 1883),
+            username: current.username || '',
+            password: current.password || ''
+          })
+        });
+      }
+      if (sectionsToImport.includes('time')){
+        await fetchJson('/config/time', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(source.time || {})
+        });
+      }
+      if (sectionsToImport.includes('interfaces')){
+        await fetchJson('/config/interfaces', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ interfaces: source.interfaces?.interfaces || [] })
+        });
+        await fetchJson('/config/mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: source.interfaces?.mode || 'control' })
+        });
+      }
+      if (sectionsToImport.includes('controls')){
+        let controls = Array.isArray(source.controls) ? source.controls : [];
+        if (document.getElementById('controlsImportMode').value === 'merge'){
+          const current = (await fetchJson('/config/controls', { cache: 'no-store' })).controls || [];
+          controls = mergeControls(current, controls).controls;
+        }
+        await fetchJson('/config/controls', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ controls })
+        });
+      }
+    }
+
+    document.getElementById('configExportBtn').addEventListener('click', () => {
+      setMessage(document.getElementById('exportResult'), '');
+      openDialog(document.getElementById('exportDialog'));
+    });
+    document.getElementById('exportCancelBtn').addEventListener('click', () => closeDialog(document.getElementById('exportDialog')));
+    document.getElementById('exportAll').addEventListener('change', event => {
+      document.querySelectorAll('#exportSections input').forEach(input => { input.checked = event.currentTarget.checked; });
+    });
+    document.querySelectorAll('#exportSections input').forEach(input => input.addEventListener('change', () => {
+      const all = Array.from(document.querySelectorAll('#exportSections input'));
+      document.getElementById('exportAll').checked = all.every(item => item.checked);
+    }));
+    document.getElementById('exportConfirmBtn').addEventListener('click', async event => {
+      const button = event.currentTarget;
+      const result = document.getElementById('exportResult');
+      try{
+        button.disabled = true;
+        const sections = selectedValues(document.getElementById('exportSections'));
+        if (!sections.length) throw new Error('Select at least one section.');
+        const exported = await buildExport(sections);
+        downloadJson(exported, `tether-control-config-${timestampForFile()}.json`);
+        closeDialog(document.getElementById('exportDialog'));
+      }catch(error){
+        setMessage(result, 'Failure');
+      }finally{
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById('configImportChooseBtn').addEventListener('click', () => document.getElementById('configImportFile').click());
+    document.getElementById('configImportFile').addEventListener('change', async event => {
+      const file = event.currentTarget.files?.[0];
+      if (!file) return;
+      try{
+        const parsed = JSON.parse(await file.text());
+        if (parsed?.format !== CONFIG_FORMAT || Number(parsed?.schemaVersion) !== CONFIG_SCHEMA_VERSION || !parsed?.sections)
+          throw new Error('This is not a supported Tether Control configuration export.');
+        pendingConfigImport = parsed;
+        const available = new Set(Object.keys(parsed.sections));
+        document.querySelectorAll('#importSections input').forEach(input => {
+          input.disabled = !available.has(input.value);
+          input.checked = available.has(input.value);
+        });
+        document.getElementById('controlsImportMode').disabled = !available.has('controls');
+        document.getElementById('configImportFileSummary').textContent =
+          `${file.name} contains: ${Array.from(available).join(', ')}. Source ${parsed.sourceVersion || 'version unknown'}.`;
+        document.getElementById('configImportConfirmBtn').disabled = false;
+        document.getElementById('configImportCancelBtn').textContent = 'Cancel';
+        setMessage(document.getElementById('configImportResult'), '');
+        openDialog(document.getElementById('configImportDialog'));
+      }catch(error){
+        pendingConfigImport = null;
+        document.getElementById('configImportFileSummary').textContent = file.name;
+        document.querySelectorAll('#importSections input').forEach(input => {
+          input.disabled = true;
+          input.checked = false;
+        });
+        document.getElementById('controlsImportMode').disabled = true;
+        document.getElementById('configImportConfirmBtn').disabled = true;
+        document.getElementById('configImportCancelBtn').textContent = 'Close';
+        setMessage(document.getElementById('configImportResult'), 'Failure');
+        openDialog(document.getElementById('configImportDialog'));
+      }finally{
+        event.currentTarget.value = '';
+      }
+    });
+    document.getElementById('configImportCancelBtn').addEventListener('click', () => {
+      pendingConfigImport = null;
+      closeDialog(document.getElementById('configImportDialog'));
+    });
+    document.getElementById('configImportConfirmBtn').addEventListener('click', async event => {
+      const button = event.currentTarget;
+      try{
+        button.disabled = true;
+        await importConfiguration();
+        pendingConfigImport = null;
+        document.getElementById('configImportCancelBtn').textContent = 'Close';
+        setMessage(document.getElementById('configImportResult'), 'Success', true);
+      }catch(error){
+        setMessage(document.getElementById('configImportResult'), 'Failure');
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById('groupChooseBtn').addEventListener('click', () => document.getElementById('groupImportFile').click());
+    document.getElementById('groupImportFile').addEventListener('change', event => {
+      const file = event.currentTarget.files?.[0];
+      const label = document.getElementById('groupFileName');
+      label.textContent = file?.name || 'No file chosen';
+      label.style.color = file ? 'var(--ink)' : 'var(--muted)';
+    });
+    document.getElementById('groupImportBtn').addEventListener('click', async event => {
+      const button = event.currentTarget;
+      const file = document.getElementById('groupImportFile').files?.[0];
+      const message = document.getElementById('groupImportMsg');
+      if (!file){
+        setMessage(message, 'Choose a file first.');
+        return;
+      }
+      try{
+        button.disabled = true;
+        setMessage(message, 'Reading file...', true);
+        const form = new FormData();
+        form.append('file', file);
+        const parsed = await fetchJson('/config/control/import/toolkit', { method: 'POST', body: form });
+        const incoming = Array.isArray(parsed.devices) ? parsed.devices : [];
+        const existing = (await fetchJson('/config/controls', { cache: 'no-store' })).controls || [];
+        const merged = mergeControls(existing, incoming);
+        pendingGroupImport = merged;
+        document.getElementById('groupImportSummary').textContent =
+          `${incoming.length} valid entries were found. ${merged.added} will be added and ${merged.skipped} existing address or entity-name conflicts will be skipped.`;
+        document.getElementById('groupImportConfirmBtn').disabled = merged.added === 0;
+        document.getElementById('groupImportCancelBtn').textContent = 'Cancel';
+        setMessage(document.getElementById('groupImportResult'), '');
+        openDialog(document.getElementById('groupImportDialog'));
+        setMessage(message, '');
+      }catch(error){
+        pendingGroupImport = null;
+        document.getElementById('groupImportSummary').textContent = file.name;
+        document.getElementById('groupImportConfirmBtn').disabled = true;
+        document.getElementById('groupImportCancelBtn').textContent = 'Close';
+        setMessage(document.getElementById('groupImportResult'), 'Failure');
+        openDialog(document.getElementById('groupImportDialog'));
+        setMessage(message, '');
+      }finally{
+        button.disabled = false;
+      }
+    });
+    document.getElementById('groupImportCancelBtn').addEventListener('click', () => {
+      pendingGroupImport = null;
+      closeDialog(document.getElementById('groupImportDialog'));
+    });
+    document.getElementById('groupImportConfirmBtn').addEventListener('click', async event => {
+      const button = event.currentTarget;
+      try{
+        if (!pendingGroupImport) return;
+        button.disabled = true;
+        await fetchJson('/config/controls', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ controls: pendingGroupImport.controls })
+        });
+        pendingGroupImport = null;
+        document.getElementById('groupImportFile').value = '';
+        document.getElementById('groupFileName').textContent = 'No file chosen';
+        document.getElementById('groupImportCancelBtn').textContent = 'Close';
+        setMessage(document.getElementById('groupImportResult'), 'Success', true);
+      }catch(error){
+        setMessage(document.getElementById('groupImportResult'), 'Failure');
+        button.disabled = false;
+      }
+    });
+
+    const uiSessionId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+    const uiPath = window.location.pathname || '/tools';
+    const sessionPayload = JSON.stringify({ sessionId: uiSessionId, path: uiPath });
+    fetch('/ui/session/open', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: sessionPayload
+    }).catch(() => {});
+    window.addEventListener('pagehide', () => {
+      try{
+        if (navigator.sendBeacon)
+          navigator.sendBeacon('/ui/session/close', new Blob([sessionPayload], { type: 'application/json' }));
+        else
+          fetch('/ui/session/close', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: sessionPayload, keepalive: true }).catch(() => {});
+      }catch{}
+    });
+    updateLicenceWarning();
+    setInterval(updateLicenceWarning, 1000);
+  })();
+  </script>
+</body>
+</html>

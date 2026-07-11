@@ -1,0 +1,8 @@
+.git
+.gitignore
+bin
+obj
+publish-ha
+publish-public
+scripts
+*.md

@@ -1,0 +1,2018 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="/favicon.ico" />
+  <title>C-Bus Group Setup - Tether Control</title>
+  <style>
+    :root {
+      --page-width: 1280px;
+      --bg: #eaf5ff;
+      --card: #f8fcff;
+      --line: #bfd8ea;
+      --ink: #173247;
+      --muted: #5e7b92;
+      --accent: #3b87c8;
+      --accent-2: #66b3e6;
+      --nav-bg: #e2eef8;
+      --ok-bg: #d9f2da;
+      --ok-line: #5f9f68;
+      --dialog-backdrop: rgba(23, 50, 71, 0.42);
+    }
+    body { font-family: "Segoe UI", Tahoma, sans-serif; margin: 0; overflow-x: auto; color: var(--ink); background: #ffffff; }
+    .page { width: var(--page-width); min-width: var(--page-width); max-width: var(--page-width); margin: 24px auto; }
+    .card, .box { width: 100%; max-width: 100%; box-sizing: border-box; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: color-mix(in srgb, var(--card) 96%, white);  }
+    .card > .box { margin-top: 12px; }
+    .row { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .muted { color: var(--muted); font-size: 0.95em; }
+    input, select, button { font: inherit; }
+    input, select { border: 1px solid var(--line); border-radius: 10px; background: white; color: var(--ink); padding: 4px 8px; }
+    button { padding: 4px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--nav-bg); color: var(--ink); cursor: pointer; transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease; }
+    button:hover { background: #d8ecfb; border-color: var(--accent); }
+    button:active { transform: translateY(1px); }
+    button.btn-flash-ok { background: var(--ok-bg); border-color: var(--ok-line); color: #1f5e33; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #dceaf5; padding: 6px; text-align: left; }
+    th { font-weight: 600; }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable.sorted-asc::after { content: " ▲"; font-size: 0.85em; color: #555; }
+    th.sortable.sorted-desc::after { content: " ▼"; font-size: 0.85em; color: #555; }
+    select.type { min-width: 112px; }
+    .small { width: 54px; }
+    .med { width: 170px; }
+    .pulse-sm { width: 60px; }
+    input.deviceName { width: 470px; box-sizing: border-box; }
+    td.state, td.level { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    td.state { min-width: 14ch; }
+    td.level { min-width: 11ch; }
+    th.col-trigger, td.col-trigger { width: 104px; text-align: left; }
+    td.col-trigger { padding-left: 4px; }
+    th.col-remove, td.col-remove { width: 88px; text-align: right; }
+    table.secondary-device-table { table-layout: fixed; }
+    table.secondary-device-table col.col-entity { width: 482px; }
+    table.secondary-device-table col.col-number { width: 82px; }
+    table.secondary-device-table col.col-binary-invert { width: 90px; }
+    table.secondary-device-table col.col-input-type { width: 190px; }
+    table.secondary-device-table col.col-voltage { width: 90px; }
+    table.secondary-device-table col.col-state { width: 150px; }
+    table.secondary-device-table col.col-level,
+    table.secondary-device-table col.col-value { width: 120px; }
+    .triggerCellWrap { display: inline-flex; align-items: center; gap: 12px; position: relative; }
+    .triggerBtn {
+      width: 42px;
+      height: 26px;
+      padding: 0;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+      border: 1px solid #aac8dd;
+      background: linear-gradient(180deg, #d7e9f7, #c8deef);
+      transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.7);
+    }
+    .triggerBtn:hover { background: linear-gradient(180deg, #d0e6f8, #bdd9ed); border-color: #82add0; }
+    .triggerBtn.is-on {
+      background: linear-gradient(180deg, #8bd49c, #67be7e);
+      border-color: #4e9f65;
+    }
+    .triggerBtn.is-on:hover { background: linear-gradient(180deg, #84d096, #5eb774); border-color: #478f5c; }
+    .triggerBtn .toggle-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      margin-left: 2px;
+      background: linear-gradient(180deg, #ffffff, #eaf2f8);
+      border: 1px solid rgba(111, 139, 160, 0.45);
+      box-shadow: 0 1px 2px rgba(23, 50, 71, 0.22);
+      transition: transform 0.18s ease;
+      pointer-events: none;
+    }
+    .triggerBtn.is-on .toggle-thumb { transform: translateX(16px); }
+    .dimmerBtn {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eef5fb;
+      border: 1px solid #b8d0e1;
+      color: #3a6785;
+      position: relative;
+    }
+    .dimmerBtn:hover { background: #e3eff8; border-color: #82add0; }
+    .dimmerBtn:disabled,
+    .dimmerBtn.is-disabled {
+      background: #f4f7fa;
+      border-color: #d4e1eb;
+      color: #9ab0c1;
+      cursor: default;
+      opacity: 0.75;
+    }
+    .dimmerIcon {
+      width: 17px;
+      height: 17px;
+      border: 1.8px solid currentColor;
+      border-radius: 50%;
+      display: inline-block;
+      position: relative;
+      box-sizing: border-box;
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.85) 0 18%, transparent 19% 100%);
+    }
+    .dimmerIcon::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1.8px;
+      height: 6px;
+      transform-origin: center bottom;
+      transform: translate(-50%, -100%) rotate(38deg);
+      border-radius: 999px;
+      background: currentColor;
+    }
+    .levelPopup {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      z-index: 20;
+      width: 222px;
+      padding: 8px 10px;
+      box-sizing: border-box;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: color-mix(in srgb, var(--card) 98%, white);
+      box-shadow: 0 12px 26px rgba(23, 50, 71, 0.18);
+      display: none;
+    }
+    .levelPopup.is-open { display: block; }
+    .levelPopupLabel { font-size: 0.82em; color: var(--muted); margin-bottom: 5px; }
+    .levelSlider {
+      display: block;
+      width: 100%;
+      margin: 0;
+      box-sizing: border-box;
+      appearance: none;
+      -webkit-appearance: none;
+      background: transparent;
+      accent-color: #4f96cc;
+    }
+    .levelSlider:focus { outline: none; }
+    .levelSlider::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #b9d7ec, #8ab8dc);
+    }
+    .levelSlider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      margin-top: -5px;
+      border: 1px solid #7da7c5;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #ffffff, #deebf4);
+      box-shadow: 0 1px 2px rgba(23, 50, 71, 0.22);
+    }
+    .levelSlider::-moz-range-track {
+      height: 6px;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #b9d7ec, #8ab8dc);
+    }
+    .levelSlider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border: 1px solid #7da7c5;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #ffffff, #deebf4);
+      box-shadow: 0 1px 2px rgba(23, 50, 71, 0.22);
+    }
+    .levelPercent { margin-top: 5px; text-align: right; font-size: 0.88em; color: var(--ink); }
+    .hidden { display: none; }
+    dialog#bulkDialog, dialog#removeConfirmDialog, dialog#sortConfirmDialog, dialog#fieldValidationDialog, dialog#missingAppDialog, dialog#missingAppNameDialog { border: 1px solid var(--line); border-radius: 18px; padding: 14px; background: color-mix(in srgb, var(--card) 97%, white); color: var(--ink); }
+    dialog#bulkDialog { width: max-content; max-width: calc(100vw - 32px); box-sizing: border-box; overflow-x: auto; }
+    dialog#removeConfirmDialog, dialog#sortConfirmDialog { min-width: 340px; }
+    dialog#fieldValidationDialog, dialog#missingAppDialog, dialog#missingAppNameDialog { min-width: 420px; max-width: 95vw; }
+    dialog#bulkDialog::backdrop, dialog#removeConfirmDialog::backdrop, dialog#sortConfirmDialog::backdrop, dialog#fieldValidationDialog::backdrop, dialog#missingAppDialog::backdrop, dialog#missingAppNameDialog::backdrop { background: var(--dialog-backdrop); }
+    .bulk-hidden { display: none !important; }
+    .bulk-form { display: flex; flex-wrap: nowrap; gap: 10px; align-items: flex-end; width: max-content; min-width: 100%; }
+    .bulk-field { display: flex; flex-direction: column; gap: 4px; min-width: max-content; flex: 0 0 auto; }
+    .bulk-field label { font-size: 0.95em; color: #444; }
+    .bulk-field input.bulk-start-group { width: 11ch; box-sizing: border-box; }
+    .bulk-field input.bulk-start-channel { width: 13ch; box-sizing: border-box; }
+    .bulk-field.bulk-wide { min-width: 220px; }
+    .bulk-field.bulk-check { min-width: 120px; justify-content: flex-end; }
+    .banner { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; padding: 10px 16px; border-radius: 14px; font-weight: 600; display:flex; justify-content:space-between; align-items:center; }
+    .nav { display:flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 12px 0; }
+    .nav a { text-decoration: none; }
+    .nav .navBtn { display:inline-block; padding: 4px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--nav-bg); color: var(--ink); }
+    .page-title-row { position:relative; min-height:42px; display:flex; align-items:center; margin: 0 0 16px; }
+    .page-title-row h1 { margin:0; }
+    .licence-warning { position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); color:var(--ink); background:var(--bad-bg); border:1px solid var(--bad-line); border-radius:999px; padding:4px 14px; font-weight:800; font-size:20px; text-align:center; white-space:nowrap; }
+    .licence-warning.hidden { display:none; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="banner"><span>Tether Control</span><span>{{APP_VERSION}}</span></div>
+    <div class="nav">
+      <a class="navBtn" href="/">Configuration</a>
+      <a class="navBtn" href="/controls">C-Bus Group Setup</a>
+      <a class="navBtn" href="/tools">Tools</a>
+      <a class="navBtn" href="/help">Help</a>
+    </div>
+    <div class="page-title-row">
+      <h1>C-Bus Group Setup</h1>
+      <span id="licenceWarning" class="licence-warning hidden">Failure: Licence key is invalid.</span>
+    </div>
+    <div class="card">
+    <div class="box">
+      <div class="row">
+        <p style="margin:0;"><b>Controls</b></p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th class="sortable" data-sort-section="control" data-sort-type="text">Entity Name</th>
+            <th class="sortable col-device-type" data-sort-section="control" data-sort-type="text">Device Type</th>
+            <th class="sortable" data-sort-section="control" data-sort-type="num">App</th>
+            <th class="sortable" data-sort-section="control" data-sort-type="num">Group</th>
+            <th class="sortable" data-sort-section="control" data-sort-type="text">State</th>
+            <th class="sortable" data-sort-section="control" data-sort-type="num">Level</th>
+            <th class="col-trigger"></th>
+            <th class="col-remove"></th>
+          </tr>
+        </thead>
+        <tbody id="controlBody"></tbody>
+      </table>
+      <div class="row" style="margin-top:10px; justify-content:flex-end;">
+        <span class="muted" id="controlSaveMsg"></span>
+        <button id="addControlBtn" type="button">Add Control</button>
+        <button id="bulkControlBtn" type="button">Bulk Add</button>
+        <button id="saveControlBtn" type="button">Save</button>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="row">
+        <p style="margin:0;"><b>Binary Sensors</b></p>
+      </div>
+      <table class="secondary-device-table">
+        <colgroup>
+          <col class="col-entity" />
+          <col class="col-number" />
+          <col class="col-number" />
+          <col class="col-binary-invert" />
+          <col class="col-state" />
+          <col class="col-level" />
+          <col />
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="sortable" data-sort-section="binary" data-sort-type="text">Entity Name</th>
+            <th class="sortable" data-sort-section="binary" data-sort-type="num">App</th>
+            <th class="sortable" data-sort-section="binary" data-sort-type="num">Group</th>
+            <th class="sortable" data-sort-section="binary" data-sort-type="text">Invert</th>
+            <th class="sortable" data-sort-section="binary" data-sort-type="text">State</th>
+            <th class="sortable" data-sort-section="binary" data-sort-type="num">Level</th>
+            <th class="col-remove"></th>
+          </tr>
+        </thead>
+        <tbody id="binaryBody"></tbody>
+      </table>
+      <div class="row" style="margin-top:10px; justify-content:flex-end;">
+        <span class="muted" id="binarySaveMsg"></span>
+        <button id="addBinaryBtn" type="button">Add Binary Sensor</button>
+        <button id="bulkBinaryBtn" type="button">Bulk Add</button>
+        <button id="saveBinaryBtn" type="button">Save</button>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="row">
+        <p style="margin:0;"><b>Measurement Sensors</b></p>
+      </div>
+      <table class="secondary-device-table">
+        <colgroup>
+          <col class="col-entity" />
+          <col class="col-input-type" />
+          <col class="col-number" />
+          <col class="col-number" />
+          <col class="col-voltage" />
+          <col class="col-value" />
+          <col />
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="sortable" data-sort-section="measurement" data-sort-type="text">Entity Name</th>
+            <th class="sortable" data-sort-section="measurement" data-sort-type="text">Input Type</th>
+            <th class="sortable" data-sort-section="measurement" data-sort-type="num">Unit</th>
+            <th class="sortable" data-sort-section="measurement" data-sort-type="num">Channel</th>
+            <th class="sortable" data-sort-section="measurement" data-sort-type="num">Voltage</th>
+            <th class="sortable" data-sort-section="measurement" data-sort-type="num">Value</th>
+            <th class="col-remove"></th>
+          </tr>
+        </thead>
+        <tbody id="measBody"></tbody>
+      </table>
+      <div class="row" style="margin-top:10px; justify-content:flex-end;">
+        <span class="muted" id="measSaveMsg"></span>
+        <button id="addMeasBtn" type="button">Add Measurement</button>
+        <button id="bulkMeasBtn" type="button">Bulk Add</button>
+        <button id="saveMeasBtn" type="button">Save</button>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="row">
+        <p style="margin:0;"><b>Shutters</b></p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th class="sortable" data-sort-section="shutter" data-sort-type="text">Entity Name</th>
+            <th class="sortable" data-sort-section="shutter" data-sort-type="text">Device Type</th>
+            <th class="sortable" data-sort-section="shutter" data-sort-type="num">App</th>
+            <th class="sortable" data-sort-section="shutter" data-sort-type="num">Group</th>
+            <th class="sortable" data-sort-section="shutter" data-sort-type="text">Control Type</th>
+            <th class="sortable" data-sort-section="shutter" data-sort-type="num">Pulse</th>
+            <th class="col-trigger"></th>
+            <th class="col-remove"></th>
+          </tr>
+        </thead>
+        <tbody id="shutterBody"></tbody>
+      </table>
+      <div class="row" style="margin-top:10px; justify-content:flex-end;">
+        <span class="muted" id="shutterSaveMsg"></span>
+        <button id="addShutterBtn" type="button">Add Shutter</button>
+        <button id="bulkShutterBtn" type="button">Bulk Add</button>
+        <button id="saveShutterBtn" type="button">Save</button>
+      </div>
+    </div>
+
+    <dialog id="bulkDialog">
+      <h3 id="bulkDialogTitle" style="margin:0 0 10px 0;">Bulk Add</h3>
+      <input id="bulkKind" type="hidden" />
+      <div class="bulk-form">
+        <div class="bulk-field bulk-wide">
+          <label for="bulkPrefixInput">Entity Name Prefix</label>
+          <input id="bulkPrefixInput" placeholder="Light_" />
+        </div>
+        <div class="bulk-field">
+          <label for="bulkCountInput">Count</label>
+          <input id="bulkCountInput" class="small" placeholder="10" />
+        </div>
+        <div class="bulk-field bulk-common">
+          <label for="bulkAppInput">App</label>
+          <input id="bulkAppInput" class="small" placeholder="56" />
+        </div>
+        <div class="bulk-field bulk-common">
+          <label for="bulkStartInput">Group Start</label>
+          <input id="bulkStartInput" class="small bulk-start-group" placeholder="0" />
+        </div>
+        <div class="bulk-field bulk-control bulk-wide">
+          <label for="bulkControlTypeInput">Device Type</label>
+          <select id="bulkControlTypeInput">
+            <option value="switch">Switch</option>
+            <option value="light">Light</option>
+            <option value="dimmer">Dimmer</option>
+            <option value="fan">Fan</option>
+          </select>
+        </div>
+        <div class="bulk-field bulk-binary bulk-check">
+          <label><input id="bulkBinaryInvertInput" type="checkbox" /> Invert</label>
+        </div>
+        <div class="bulk-field bulk-measurement">
+          <label for="bulkMeasUnitInput">Unit</label>
+          <input id="bulkMeasUnitInput" class="small" placeholder="1" />
+        </div>
+        <div class="bulk-field bulk-measurement">
+          <label for="bulkMeasChannelStartInput">Channel Start</label>
+          <input id="bulkMeasChannelStartInput" class="small bulk-start-channel" placeholder="1" />
+        </div>
+        <div class="bulk-field bulk-measurement">
+          <label for="bulkMeasInputTypeInput">Input Type</label>
+          <select id="bulkMeasInputTypeInput" class="med">
+            <option value="current">Current (A)</option>
+            <option value="temperature">Temperature (C)</option>
+            <option value="humidity">Humidity (%)</option>
+          </select>
+        </div>
+        <div class="bulk-field bulk-measurement" id="bulkMeasVoltageField">
+          <label for="bulkMeasVoltageInput">Voltage (V)</label>
+          <input id="bulkMeasVoltageInput" class="small" placeholder="240" />
+        </div>
+        <div class="bulk-field bulk-shutter bulk-wide">
+          <label for="bulkShutterTypeInput">Shutter Type</label>
+          <select id="bulkShutterTypeInput">
+            <option value="shutter">Shutter</option>
+            <option value="roller_door">Roller Door</option>
+            <option value="blind">Blind</option>
+            <option value="curtain">Curtain</option>
+          </select>
+        </div>
+        <div class="bulk-field bulk-shutter">
+          <label for="bulkShutterControlTypeInput">Control</label>
+          <select id="bulkShutterControlTypeInput" class="med">
+            <option value="up_down_off">Up/Down/Off</option>
+            <option value="toggle">Toggle</option>
+            <option value="pulse">Pulse</option>
+          </select>
+        </div>
+        <div class="bulk-field bulk-shutter">
+          <label for="bulkShutterPulseInput">Pulse</label>
+          <input id="bulkShutterPulseInput" class="small" placeholder="0.25" />
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px; justify-content:flex-end;">
+        <button id="bulkDialogCancelBtn" type="button">Cancel</button>
+        <button id="bulkDialogAddBtn" type="button">Add</button>
+      </div>
+    </dialog>
+    <dialog id="removeConfirmDialog">
+      <p style="margin:0 0 10px 0;">Are you sure you want to remove?</p>
+      <div class="row" style="justify-content:flex-end;">
+        <button id="removeNoBtn" type="button">No</button>
+        <button id="removeYesBtn" type="button">Yes</button>
+      </div>
+    </dialog>
+    <dialog id="sortConfirmDialog">
+      <p style="margin:0 0 10px 0;">Unsaved device configuration will be lost. Save?</p>
+      <div class="row" style="justify-content:flex-end;">
+        <button id="sortSaveBtn" type="button">Save</button>
+        <button id="sortContinueBtn" type="button">Continue without saving</button>
+        <button id="sortCancelBtn" type="button">Cancel</button>
+      </div>
+    </dialog>
+    <dialog id="fieldValidationDialog">
+      <h3 style="margin:0 0 10px 0;">Invalid Value</h3>
+      <p id="fieldValidationDialogText" style="margin:0 0 10px 0;">App cannot be ABC.</p>
+      <div class="row" style="justify-content:flex-end;">
+        <button id="fieldValidationOkBtn" type="button">OK</button>
+      </div>
+    </dialog>
+    <dialog id="missingAppDialog">
+      <h3 style="margin:0 0 10px 0;">Application Required</h3>
+      <p id="missingAppDialogText" style="margin:0 0 10px 0;">Control device application 56 is not currently enabled. Enable it?</p>
+      <div class="row" style="justify-content:flex-end;">
+        <button id="missingAppNoBtn" type="button">No</button>
+        <button id="missingAppYesBtn" type="button">Yes</button>
+      </div>
+    </dialog>
+    <dialog id="missingAppNameDialog">
+      <h3 style="margin:0 0 10px 0;">Enable Application</h3>
+      <div class="bulk-form">
+        <div class="bulk-field bulk-wide">
+          <label for="missingAppNameInput">New Application Name:</label>
+          <input id="missingAppNameInput" class="med" />
+        </div>
+      </div>
+      <div class="row" style="justify-content:flex-end;">
+        <button id="missingAppNameSaveBtn" type="button">Save</button>
+      </div>
+    </dialog>
+  </div>
+
+<script>
+(() => {
+  const uiSessionId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+  const uiPath = window.location.pathname || '/';
+  function logUiOpen(){
+    fetch('/ui/session/open', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: uiSessionId, path: uiPath })
+    }).catch(() => {});
+  }
+  function logUiClose(){
+    const payload = JSON.stringify({ sessionId: uiSessionId, path: uiPath });
+    try{
+      if (navigator.sendBeacon){
+        navigator.sendBeacon('/ui/session/close', new Blob([payload], { type: 'application/json' }));
+      } else {
+        fetch('/ui/session/close', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+      }
+    }catch{
+      // ignore
+    }
+  }
+  logUiOpen();
+  window.addEventListener('pagehide', logUiClose);
+
+  const STATE_WIDTH = 7;
+  const LEVEL_WIDTH = 3;
+  const dirtyBySection = {
+    control: false,
+    binary: false,
+    measurement: false,
+    shutter: false
+  };
+  const sortState = {
+    control: { idx: null, dir: 1 },
+    binary: { idx: null, dir: 1 },
+    measurement: { idx: null, dir: 1 },
+    shutter: { idx: null, dir: 1 }
+  };
+  let pendingSort = null;
+  let coreAppsCache = [];
+  let coreAppsLoadPromise = null;
+  let pendingMissingApp = null;
+  let pendingMissingAppSave = null;
+  let bypassMissingAppCheckOnce = false;
+  let initialControlsBootstrap = {{INITIAL_CONTROLS_JSON}};
+  let initialStatusBootstrap = {{INITIAL_STATUS_JSON}};
+  let initialMeasurementBootstrap = {{INITIAL_MEAS_JSON}};
+  function hasAnyDirty(){
+    return !!(dirtyBySection.control || dirtyBySection.binary || dirtyBySection.measurement || dirtyBySection.shutter);
+  }
+
+  function markDirty(section){
+    if (dirtyBySection[section] !== undefined) dirtyBySection[section] = true;
+  }
+
+  function clearDirty(){
+    dirtyBySection.control = false;
+    dirtyBySection.binary = false;
+    dirtyBySection.measurement = false;
+    dirtyBySection.shutter = false;
+  }
+
+  function extractNumber(text){
+    const m = (text ?? '').toString().match(/-?\\d+(\\.\\d+)?/);
+    if (!m) return NaN;
+    const n = Number(m[0]);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  function classifyValue(raw, isNumericType){
+    const text = (raw ?? '').toString().trim();
+    const num = extractNumber(text);
+    const hasLetters = /[A-Za-z]/.test(text);
+    const isNumericOnly = text !== '' && !hasLetters && /^[-+]?\\d*(\\.\\d+)?$/.test(text);
+    if (isNumericType && Number.isFinite(num)){
+      return { raw: text, num, hasLetters: false, isNumericOnly: true };
+    }
+    return { raw: text, num, hasLetters, isNumericOnly };
+  }
+
+  function getCellSortValue(cell, type){
+    if (!cell) return classifyValue('', type === 'num');
+    const input = cell.querySelector('input, select');
+    if (input){
+      if (input.type === 'checkbox') return { raw: input.checked ? '1' : '0', num: input.checked ? 1 : 0, hasLetters: false, isNumericOnly: true };
+      return classifyValue(input.value ?? '', type === 'num');
+    }
+    const text = (cell.textContent ?? '').trim();
+    return classifyValue(text, type === 'num');
+  }
+
+  function compareValues(a, b, type){
+    const aHasLetters = a.hasLetters;
+    const bHasLetters = b.hasLetters;
+    if (aHasLetters !== bHasLetters) return aHasLetters ? -1 : 1;
+
+    if (a.isNumericOnly && b.isNumericOnly){
+      const na = Number.isFinite(a.num) ? a.num : NaN;
+      const nb = Number.isFinite(b.num) ? b.num : NaN;
+      const aNan = Number.isNaN(na);
+      const bNan = Number.isNaN(nb);
+      if (aNan && bNan) return 0;
+      if (aNan) return 1;
+      if (bNan) return -1;
+      if (na < nb) return -1;
+      if (na > nb) return 1;
+      return 0;
+    }
+
+    const sa = (a.raw ?? '').toString().toLowerCase();
+    const sb = (b.raw ?? '').toString().toLowerCase();
+    return sa.localeCompare(sb, undefined, { numeric: true, sensitivity: 'base' });
+  }
+
+  function updateSortIndicators(section, th){
+    document.querySelectorAll(`th.sortable[data-sort-section="${section}"]`).forEach(h => {
+      h.classList.remove('sorted-asc', 'sorted-desc');
+    });
+    const state = sortState[section];
+    if (state && th){
+      th.classList.add(state.dir === 1 ? 'sorted-asc' : 'sorted-desc');
+    }
+  }
+
+  function sortTable(section, th){
+    const tbodyId = section === 'control' ? 'controlBody'
+      : section === 'binary' ? 'binaryBody'
+      : section === 'measurement' ? 'measBody'
+      : 'shutterBody';
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    const colIdx = th.cellIndex;
+    const type = th.dataset.sortType || 'text';
+    const rows = Array.from(tbody.querySelectorAll('tr')).map((row, idx) => ({
+      row,
+      idx,
+      key: getCellSortValue(row.children[colIdx], type)
+    }));
+    const dir = sortState[section].dir;
+    rows.sort((a, b) => {
+      const c = compareValues(a.key, b.key, type);
+      if (c !== 0) return c * dir;
+      return a.idx - b.idx;
+    });
+    tbody.innerHTML = '';
+    rows.forEach(r => tbody.appendChild(r.row));
+    updateSortIndicators(section, th);
+  }
+
+  function openSortDialog(action){
+    pendingSort = action;
+    const dlg = document.getElementById('sortConfirmDialog');
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else dlg.setAttribute('open', 'open');
+  }
+
+  function closeSortDialog(){
+    const dlg = document.getElementById('sortConfirmDialog');
+    if (typeof dlg.close === 'function') dlg.close();
+    else dlg.removeAttribute('open');
+    pendingSort = null;
+  }
+
+  function openFieldValidationDialog(deviceLabel, fieldName, fieldValue){
+    const txt = document.getElementById('fieldValidationDialogText');
+    const label = (deviceLabel || '').trim();
+    const shownValue = (fieldValue ?? '').toString().trim() || '(blank)';
+    txt.textContent = label
+      ? `${label} ${fieldName} cannot be ${shownValue}.`
+      : `${fieldName} cannot be ${shownValue}.`;
+    const dlg = document.getElementById('fieldValidationDialog');
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else dlg.setAttribute('open', 'open');
+  }
+
+  function openFieldValidationDialogMessage(message){
+    const txt = document.getElementById('fieldValidationDialogText');
+    txt.textContent = (message ?? '').toString().trim() || 'Invalid value.';
+    const dlg = document.getElementById('fieldValidationDialog');
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else dlg.setAttribute('open', 'open');
+  }
+
+  function closeFieldValidationDialog(){
+    const dlg = document.getElementById('fieldValidationDialog');
+    if (typeof dlg.close === 'function') dlg.close();
+    else dlg.removeAttribute('open');
+  }
+
+  async function loadCoreApps(){
+    const r = await fetch('/config/core', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    coreAppsCache = Array.isArray(j.apps) ? j.apps : [];
+    return coreAppsCache;
+  }
+
+  function ensureCoreAppsLoaded(){
+    if (!coreAppsLoadPromise){
+      coreAppsLoadPromise = loadCoreApps().catch((e) => {
+        coreAppsLoadPromise = null;
+        throw e;
+      });
+    }
+    return coreAppsLoadPromise;
+  }
+
+  function isAppEnabled(appNum){
+    return coreAppsCache.some(a => Number(a?.app) === Number(appNum) && !!a?.enabled);
+  }
+
+  function isMeasurementAppEnabled(){
+    return coreAppsCache.some(a => (a?.type || '').toString().toLowerCase() === 'measurement' && !!a?.enabled);
+  }
+
+  function findFirstMissingAppRequirement(rows){
+    const seen = new Set();
+    let hasMeasurement = false;
+    for (const row of rows){
+      if ((row?.function || '').toString().toLowerCase() === 'measurement'){
+        hasMeasurement = true;
+        continue;
+      }
+      const appNum = Number(row?.app);
+      if (!Number.isFinite(appNum) || seen.has(appNum)) continue;
+      seen.add(appNum);
+      if (!isAppEnabled(appNum)) return { app: appNum, type: 'lighting', deviceLabel: 'Control device' };
+    }
+    if (hasMeasurement && !isMeasurementAppEnabled()) return { app: 228, type: 'measurement', deviceLabel: 'Measurement' };
+    return null;
+  }
+
+  function openMissingAppDialog(requirement){
+    if (!requirement) return;
+    pendingMissingApp = {
+      app: Number(requirement.app),
+      type: (requirement.type || 'lighting').toString().toLowerCase(),
+      deviceLabel: (requirement.deviceLabel || 'Control device').toString()
+    };
+    const txt = document.getElementById('missingAppDialogText');
+    if (txt) txt.textContent = `${pendingMissingApp.deviceLabel} application ${pendingMissingApp.app} is not currently enabled. Enable it?`;
+    const dlg = document.getElementById('missingAppDialog');
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else dlg.setAttribute('open', 'open');
+  }
+
+  function closeMissingAppDialog(){
+    const dlg = document.getElementById('missingAppDialog');
+    if (typeof dlg.close === 'function') dlg.close();
+    else dlg.removeAttribute('open');
+  }
+
+  function openMissingAppNameDialog(){
+    const input = document.getElementById('missingAppNameInput');
+    if (input){
+      input.value = '';
+      input.focus();
+    }
+    const dlg = document.getElementById('missingAppNameDialog');
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else dlg.setAttribute('open', 'open');
+  }
+
+  function closeMissingAppNameDialog(){
+    const dlg = document.getElementById('missingAppNameDialog');
+    if (typeof dlg.close === 'function') dlg.close();
+    else dlg.removeAttribute('open');
+  }
+
+  async function enableMissingApp(appNum, appName, appType){
+    const apps = await loadCoreApps();
+    const next = apps.map(a => ({ ...a }));
+    const idx = next.findIndex(a => Number(a?.app) === Number(appNum));
+    if (idx >= 0){
+      next[idx].enabled = true;
+      next[idx].type = appType || next[idx].type || 'lighting';
+      next[idx].name = appName;
+    } else {
+      next.push({ app: Number(appNum), name: appName, type: appType || 'lighting', enabled: true });
+    }
+    next.sort((a, b) => Number(a?.app || 0) - Number(b?.app || 0));
+    const r = await fetch('/config/core', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apps: next })
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    coreAppsCache = next;
+  }
+
+  function flashSuccess(msgEl, text, ms = 3000){
+    if (!msgEl) return;
+    msgEl.textContent = text;
+    const token = String(Date.now()) + Math.random().toString(16).slice(2);
+    msgEl.dataset.flashToken = token;
+    setTimeout(() => {
+      if (msgEl.dataset.flashToken === token && msgEl.textContent === text){
+        msgEl.textContent = '';
+      }
+    }, ms);
+  }
+
+  function flashButtonSuccess(btn, ms = 450){
+    if (!btn) return;
+    const token = String(Date.now()) + Math.random().toString(16).slice(2);
+    btn.dataset.flashToken = token;
+    btn.classList.add('btn-flash-ok');
+    setTimeout(() => {
+      if (btn.dataset.flashToken === token){
+        btn.classList.remove('btn-flash-ok');
+      }
+    }, ms);
+  }
+
+  function padFixed(text, width){
+    const s = (text ?? '').toString();
+    return s.length >= width ? s.slice(0, width) : s.padEnd(width, ' ');
+  }
+
+  function formatStateText(state){
+    const raw = (state ?? '-').toString().trim();
+    const token = raw ? raw.toUpperCase() : '-';
+    return `State: ${padFixed(token, STATE_WIDTH)}`;
+  }
+
+  function formatLevelText(level){
+    const raw = (level ?? '-').toString().trim();
+    const token = raw ? raw : '-';
+    return `Level: ${padFixed(token, LEVEL_WIDTH)}`;
+  }
+
+  function clampLevel(level){
+    const n = Number(level);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(255, Math.round(n)));
+  }
+
+  function levelToPercent(level){
+    return Math.round((clampLevel(level) / 255) * 100);
+  }
+
+  function percentToLevel(percent){
+    const n = Number(percent);
+    if (!Number.isFinite(n)) return 0;
+    return clampLevel((Math.max(0, Math.min(100, n)) / 100) * 255);
+  }
+
+  function isStateOn(state, level){
+    const s = (state ?? '').toString().trim().toUpperCase();
+    if (s === 'ON' || s === 'OPEN') return true;
+    const n = Number(level);
+    return Number.isFinite(n) && n > 0;
+  }
+
+  function renderTriggerButton(isOn){
+    const stateClass = isOn ? 'is-on' : 'is-off';
+    const label = isOn ? 'On' : 'Off';
+    return `<button class="triggerBtn ${stateClass}" type="button" aria-pressed="${isOn ? 'true' : 'false'}" title="${label}"><span class="toggle-thumb"></span></button>`;
+  }
+
+  function deviceTypeSupportsDimmer(deviceType){
+    const type = (deviceType ?? '').toString().trim().toLowerCase();
+    return type === 'dimmer' || type === 'fan';
+  }
+
+  function renderDimmerControl(deviceType, level){
+    const enabled = deviceTypeSupportsDimmer(deviceType);
+    const percent = levelToPercent(level);
+    return `
+      <button class="dimmerBtn ${enabled ? '' : 'is-disabled'}" type="button" ${enabled ? '' : 'disabled'} title="${enabled ? 'Adjust level' : 'Level control unavailable'}" aria-label="${enabled ? 'Adjust level' : 'Level control unavailable'}">
+        <span class="dimmerIcon"></span>
+      </button>
+      <div class="levelPopup" aria-hidden="true">
+        <div class="levelPopupLabel">Level</div>
+        <input class="levelSlider" type="range" min="0" max="100" step="5" value="${percent}" />
+        <div class="levelPercent">${percent}%</div>
+      </div>
+    `;
+  }
+
+  function renderControlActions(deviceType, state, level){
+    return `<div class="triggerCellWrap">${renderTriggerButton(isStateOn(state, level))}${renderDimmerControl(deviceType, level)}</div>`;
+  }
+
+  function setTriggerState(tr, isOn){
+    const btn = tr?.querySelector('.triggerBtn');
+    if (!btn) return;
+    btn.classList.toggle('is-on', !!isOn);
+    btn.classList.toggle('is-off', !isOn);
+    btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+    btn.setAttribute('title', isOn ? 'On' : 'Off');
+  }
+
+  function updateDimmerUi(tr, level){
+    const slider = tr?.querySelector('.levelSlider');
+    const label = tr?.querySelector('.levelPercent');
+    if (!slider || !label) return;
+    const percent = levelToPercent(level);
+    slider.value = String(percent);
+    label.textContent = `${percent}%`;
+  }
+
+  function updateControlRowLevelUi(tr, level){
+    const clamped = clampLevel(level);
+    const stateCell = tr?.querySelector('.state');
+    const levelCell = tr?.querySelector('.level');
+    if (stateCell) stateCell.textContent = formatStateText(clamped > 0 ? 'ON' : 'OFF');
+    if (levelCell) levelCell.textContent = formatLevelText(clamped);
+    setTriggerState(tr, clamped > 0);
+    updateDimmerUi(tr, clamped);
+  }
+
+  function shouldIgnoreDirtyEvent(target){
+    if (!(target instanceof Element)) return false;
+    return !!target.closest('.levelSlider');
+  }
+
+  function isDimmerUiHeld(tr){
+    const popup = tr?.querySelector('.levelPopup');
+    const slider = tr?.querySelector('.levelSlider');
+    return !!(popup?.classList.contains('is-open') || slider === document.activeElement || tr?.dataset.levelSending === '1');
+  }
+
+  function syncRowDimmerAvailability(tr){
+    const type = tr?.querySelector('.type')?.value ?? '';
+    const enabled = deviceTypeSupportsDimmer(type);
+    const btn = tr?.querySelector('.dimmerBtn');
+    if (btn){
+      btn.disabled = !enabled;
+      btn.classList.toggle('is-disabled', !enabled);
+      btn.title = enabled ? 'Adjust level' : 'Level control unavailable';
+      btn.setAttribute('aria-label', enabled ? 'Adjust level' : 'Level control unavailable');
+    }
+    if (!enabled) closeLevelPopup(tr);
+  }
+
+  function closeLevelPopup(tr){
+    const popup = tr?.querySelector('.levelPopup');
+    if (!popup) return;
+    popup.classList.remove('is-open');
+    popup.setAttribute('aria-hidden', 'true');
+    if (tr) delete tr.dataset.levelSending;
+  }
+
+  function closeAllLevelPopups(exceptTr = null){
+    document.querySelectorAll('#controlBody tr').forEach(tr => {
+      if (exceptTr && tr === exceptTr) return;
+      closeLevelPopup(tr);
+    });
+  }
+
+  function toggleLevelPopup(tr){
+    if (!tr) return;
+    const popup = tr.querySelector('.levelPopup');
+    const btn = tr.querySelector('.dimmerBtn');
+    if (!popup || !btn || btn.disabled) return;
+    const willOpen = !popup.classList.contains('is-open');
+    closeAllLevelPopups(willOpen ? tr : null);
+    popup.classList.toggle('is-open', willOpen);
+    popup.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
+    if (willOpen){
+      const slider = tr.querySelector('.levelSlider');
+      slider?.focus();
+    }
+  }
+
+  const liveLevelSendState = new WeakMap();
+
+  function scheduleRowLevelSend(tr, level){
+    if (!tr) return;
+    const clamped = clampLevel(level);
+    let state = liveLevelSendState.get(tr);
+    if (!state){
+      state = { timer: null, sending: false, pending: null, lastSent: null };
+      liveLevelSendState.set(tr, state);
+    }
+    state.pending = clamped;
+    tr.dataset.levelSending = '1';
+    if (state.timer || state.sending) return;
+    flushRowLevelSend(tr);
+  }
+
+  async function flushRowLevelSend(tr){
+    const state = liveLevelSendState.get(tr);
+    if (!state) return;
+    const nextLevel = state.pending;
+    state.pending = null;
+    state.timer = null;
+    if (nextLevel == null){
+      if (!state.sending) delete tr.dataset.levelSending;
+      return;
+    }
+    state.sending = true;
+    try{
+      await sendRowLevel(tr, nextLevel);
+      state.lastSent = nextLevel;
+    }catch{
+      // ignore slider send errors in UI; polling will correct display.
+    }finally{
+      state.sending = false;
+      if (state.pending != null && state.pending !== state.lastSent){
+        state.timer = setTimeout(() => {
+          state.timer = null;
+          flushRowLevelSend(tr);
+        }, 20);
+      } else if (!tr.querySelector('.levelPopup')?.classList.contains('is-open')){
+        delete tr.dataset.levelSending;
+      }
+    }
+  }
+
+  const CONTROL_DEVICE_TYPES = [
+    { value: 'switch', label: 'Switch' },
+    { value: 'light', label: 'Light' },
+    { value: 'dimmer', label: 'Dimmer' },
+    { value: 'fan', label: 'Fan' }
+  ];
+
+  const MEAS_INPUT_TYPES = [
+    { value: 'current', label: 'Current (A)' },
+    { value: 'temperature', label: 'Temperature (C)' },
+    { value: 'humidity', label: 'Humidity (%)' }
+  ];
+
+  const SHUTTER_DEVICE_TYPES = [
+    { value: 'shutter', label: 'Shutter' },
+    { value: 'roller_door', label: 'Roller Door' },
+    { value: 'blind', label: 'Blind' },
+    { value: 'curtain', label: 'Curtain' }
+  ];
+
+  function prettifyTypeLabel(value){
+    return (value || '')
+      .toString()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\b\w/g, ch => ch.toUpperCase());
+  }
+
+  function normalizeMeasInputType(value){
+    const v = (value ?? '').toString().trim().toLowerCase();
+    if (v === 'a' || v === 'amp' || v === 'amps' || v === 'current') return 'current';
+    if (v === 'c' || v === 'degc' || v === 'celsius' || v === 'temperature') return 'temperature';
+    if (v === 'humidity' || v === 'humid' || v === 'rh' || v === '%' || v === 'percent') return 'humidity';
+    return v || 'temperature';
+  }
+
+  function measurementInputUsesVoltage(inputType){
+    return normalizeMeasInputType(inputType) === 'current';
+  }
+
+  function applyMeasurementVoltageVisibility(tr){
+    if (!tr) return;
+    const inputType = normalizeMeasInputType(tr.querySelector('.inputType')?.value?.trim() ?? 'current');
+    const showVoltage = measurementInputUsesVoltage(inputType);
+    const voltageInput = tr.querySelector('.voltageCalc');
+    if (voltageInput){
+      voltageInput.classList.toggle('hidden', !showVoltage);
+      voltageInput.disabled = !showVoltage;
+    }
+  }
+
+  function applyBulkMeasurementVoltageVisibility(){
+    const kind = document.getElementById('bulkKind')?.value ?? '';
+    const inputType = document.getElementById('bulkMeasInputTypeInput')?.value?.trim() ?? 'current';
+    const showVoltage = kind === 'measurement' && measurementInputUsesVoltage(inputType);
+    const field = document.getElementById('bulkMeasVoltageField');
+    if (field) field.classList.toggle('bulk-hidden', !showVoltage);
+    const input = document.getElementById('bulkMeasVoltageInput');
+    if (input) input.disabled = !showVoltage;
+  }
+
+  function normalizeVoltageValue(value){
+    const raw = (value ?? '').toString().trim();
+    if (!raw) return '240';
+    const lower = raw.toLowerCase();
+    if (lower === 'fixed240') return '240';
+    if (lower === 'external') return '240';
+    const n = Number(raw);
+    if (Number.isFinite(n) && n > 0) return String(n);
+    return '240';
+  }
+
+  function buildOptions(list, selectedRaw){
+    const selected = (selectedRaw ?? '').toString().trim().toLowerCase();
+    const known = list.some(x => x.value === selected);
+    let html = list.map(x =>
+      `<option value="${x.value}" ${x.value === selected ? 'selected' : ''}>${x.label}</option>`
+    ).join('');
+    if (selected && !known){
+      const lbl = prettifyTypeLabel(selected);
+      html += `<option value="${selected}" selected>${lbl}</option>`;
+    }
+    return html;
+  }
+
+  function rowTemplateControl(d){
+    const devName = d?.deviceName || d?.name || '';
+    const type = (d?.deviceType ?? 'switch').toString().trim().toLowerCase();
+    const app = d?.app ?? '';
+    const group = d?.group ?? '';
+    const state = formatStateText(d?.state ?? '-');
+    const level = formatLevelText(d?.level ?? '-');
+    return `
+      <tr>
+        <td><input class="deviceName" placeholder="Entity name" value="${devName}" /></td>
+        <td class="col-device-type">
+          <select class="type">
+            ${buildOptions(CONTROL_DEVICE_TYPES, type)}
+          </select>
+        </td>
+        <td><input class="app small" inputmode="numeric" placeholder="56" value="${app}" /></td>
+        <td><input class="group small" inputmode="numeric" placeholder="0" value="${group}" /></td>
+        <td class="state">${state}</td>
+        <td class="level">${level}</td>
+        <td class="col-trigger">${renderControlActions(type, d?.state, d?.level)}</td>
+        <td class="col-remove"><button class="delBtn" type="button">Remove</button></td>
+      </tr>
+    `;
+  }
+
+  function rowTemplateBinary(d){
+    const devName = d?.deviceName || d?.name || '';
+    const app = d?.app ?? '';
+    const group = d?.group ?? '';
+    const invert = !!d?.invert;
+    const state = formatStateText(d?.state ?? '-');
+    const level = formatLevelText(d?.level ?? '-');
+    return `
+      <tr>
+        <td><input class="deviceName" placeholder="Entity name" value="${devName}" /></td>
+        <td><input class="app small" inputmode="numeric" placeholder="56" value="${app}" /></td>
+        <td><input class="group small" inputmode="numeric" placeholder="0" value="${group}" /></td>
+        <td><input class="invert" type="checkbox" ${invert ? 'checked' : ''} /></td>
+        <td class="state">${state}</td>
+        <td class="level">${level}</td>
+        <td class="col-remove"><button class="delBtn" type="button">Remove</button></td>
+      </tr>
+    `;
+  }
+
+  function rowTemplateMeas(d){
+    const devName = d?.deviceName || d?.name || '';
+    const inputType = normalizeMeasInputType(d?.inputType ?? 'current');
+    const unit = d?.unitId ?? '';
+    const channel = d?.channel ?? '';
+    const voltageCalc = normalizeVoltageValue(d?.voltageCalc ?? d?.externalVoltage ?? '240');
+    const showVoltage = measurementInputUsesVoltage(inputType);
+    return `
+      <tr data-unit="${unit}" data-channel="${channel}">
+        <td><input class="deviceName" placeholder="Entity name" value="${devName}" /></td>
+        <td>
+          <select class="inputType med">
+            ${buildOptions(MEAS_INPUT_TYPES, inputType)}
+          </select>
+        </td>
+        <td><input class="unit small" placeholder="Unit" value="${unit}" /></td>
+        <td><input class="channel small" placeholder="Ch" value="${channel}" /></td>
+        <td class="voltageCell"><input class="voltageCalc small ${showVoltage ? '' : 'hidden'}" placeholder="240" value="${voltageCalc}" ${showVoltage ? '' : 'disabled'} /></td>
+        <td class="value">-</td>
+        <td class="col-remove"><button class="delBtn" type="button">Remove</button></td>
+      </tr>
+    `;
+  }
+
+  function rowTemplateShutter(d){
+    const devName = d?.deviceName || d?.name || '';
+    const type = (d?.deviceType ?? 'shutter').toString().trim().toLowerCase();
+    const app = d?.app ?? '';
+    const group = d?.group ?? '';
+    const controlType = d?.controlType ?? '';
+    const pulse = (d?.pulseSeconds ?? '').toString();
+    return `
+      <tr>
+        <td><input class="deviceName" placeholder="Entity name" value="${devName}" /></td>
+        <td>
+          <select class="type">
+            ${buildOptions(SHUTTER_DEVICE_TYPES, type)}
+          </select>
+        </td>
+        <td><input class="app small" inputmode="numeric" placeholder="56" value="${app}" /></td>
+        <td><input class="group small" inputmode="numeric" placeholder="0" value="${group}" /></td>
+        <td>
+          <select class="controlType med">
+            <option value="up_down_off" ${controlType === 'up_down_off' ? 'selected' : ''}>Up/Down/Off</option>
+            <option value="toggle" ${controlType === 'toggle' ? 'selected' : ''}>Toggle</option>
+            <option value="pulse" ${controlType === 'pulse' ? 'selected' : ''}>Pulse</option>
+          </select>
+        </td>
+        <td><input class="pulse pulse-sm" placeholder="0.25" value="${pulse}" /></td>
+        <td class="col-trigger"><div class="triggerCellWrap">${renderTriggerButton(isStateOn(d?.state, d?.level))}</div></td>
+        <td class="col-remove"><button class="delBtn" type="button">Remove</button></td>
+      </tr>
+    `;
+  }
+
+  function collectRows(){
+    const rows = [];
+    const measurementAssignments = new Map();
+    const hasAny = (...vals) => vals.some(v => (v ?? '').toString().trim() !== '');
+    const toNumOrDefault = (raw, def) => {
+      const t = (raw ?? '').toString().trim();
+      if (t === '') return def;
+      const n = Number(t);
+      return Number.isFinite(n) ? n : def;
+    };
+    const parseByteStrict = (raw, fieldName, deviceLabel) => {
+      const t = (raw ?? '').toString().trim();
+      if (!/^\d+$/.test(t))
+        throw { kind: 'fieldValidation', fieldName, fieldValue: t, deviceLabel };
+      const n = Number(t);
+      if (!Number.isInteger(n) || n < 0 || n > 255)
+        throw { kind: 'fieldValidation', fieldName, fieldValue: t, deviceLabel };
+      return n;
+    };
+    document.querySelectorAll('#controlBody tr').forEach(tr => {
+      const deviceName = tr.querySelector('.deviceName')?.value?.trim() ?? '';
+      const deviceLabel = deviceName;
+      const deviceType = tr.querySelector('.type')?.value?.trim() ?? '';
+      const appRaw = tr.querySelector('.app')?.value ?? '';
+      const groupRaw = tr.querySelector('.group')?.value ?? '';
+      if (!hasAny(deviceName, deviceType, appRaw, groupRaw)) return;
+      const app = parseByteStrict(appRaw, 'App', deviceLabel);
+      const group = parseByteStrict(groupRaw, 'Group', deviceLabel);
+      rows.push({
+        function: 'control',
+        name: '',
+        deviceName,
+        deviceType: deviceType || 'switch',
+        app,
+        group,
+        unitId: 0,
+        channel: 0,
+        inputType: 'temperature',
+        voltageCalc: '240',
+        invert: false,
+        controlType: 'up_down_off',
+        pulseSeconds: 0.25,
+        sendTime: true,
+        sendDate: true,
+        scheduleMode: 'daily',
+        dailyTime: '02:00',
+        intervalMins: 60,
+        skipMidnight: true,
+        midnightWindowMin: 10
+      });
+    });
+    document.querySelectorAll('#binaryBody tr').forEach(tr => {
+      const deviceName = tr.querySelector('.deviceName')?.value?.trim() ?? '';
+      const deviceLabel = deviceName;
+      const appRaw = tr.querySelector('.app')?.value ?? '';
+      const groupRaw = tr.querySelector('.group')?.value ?? '';
+      if (!hasAny(deviceName, appRaw, groupRaw)) return;
+      const app = parseByteStrict(appRaw, 'App', deviceLabel);
+      const group = parseByteStrict(groupRaw, 'Group', deviceLabel);
+      rows.push({
+        function: 'binary_sensor',
+        name: '',
+        deviceName,
+        deviceType: 'binary_sensor',
+        app,
+        group,
+        invert: !!tr.querySelector('.invert')?.checked
+      });
+    });
+    document.querySelectorAll('#measBody tr').forEach(tr => {
+      const deviceName = tr.querySelector('.deviceName')?.value?.trim() ?? '';
+      const deviceLabel = deviceName;
+      const unitRaw = tr.querySelector('.unit')?.value ?? '';
+      const channelRaw = tr.querySelector('.channel')?.value ?? '';
+      const inputRaw = tr.querySelector('.inputType')?.value?.trim() ?? '';
+      const voltageRaw = tr.querySelector('.voltageCalc')?.value?.trim() ?? '';
+      if (!hasAny(deviceName, unitRaw, channelRaw, inputRaw, voltageRaw)) return;
+      const inputType = normalizeMeasInputType(tr.querySelector('.inputType')?.value?.trim() ?? 'current');
+      const unitId = toNumOrDefault(unitRaw, 0);
+      const channel = toNumOrDefault(channelRaw, 0);
+      const measurementKey = `${unitId}:${channel}`;
+      if (measurementAssignments.has(measurementKey)){
+        throw { kind: 'duplicateMeasurement', unitId, channel, deviceLabel };
+      }
+      measurementAssignments.set(measurementKey, deviceLabel);
+      rows.push({
+        function: 'measurement',
+        name: '',
+        deviceName,
+        deviceType: 'measurement',
+        unitId,
+        channel,
+        inputType,
+        voltageCalc: measurementInputUsesVoltage(inputType)
+          ? normalizeVoltageValue(tr.querySelector('.voltageCalc')?.value?.trim() ?? '240')
+          : '240',
+        onlyOnChange: true
+      });
+    });
+    document.querySelectorAll('#shutterBody tr').forEach(tr => {
+      const deviceName = tr.querySelector('.deviceName')?.value?.trim() ?? '';
+      const deviceLabel = deviceName;
+      const deviceType = tr.querySelector('.type')?.value?.trim() ?? '';
+      const appRaw = tr.querySelector('.app')?.value ?? '';
+      const groupRaw = tr.querySelector('.group')?.value ?? '';
+      const controlType = tr.querySelector('.controlType')?.value?.trim() ?? '';
+      const pulseRaw = tr.querySelector('.pulse')?.value ?? '';
+      if (!hasAny(deviceName, deviceType, appRaw, groupRaw, controlType, pulseRaw)) return;
+      const app = parseByteStrict(appRaw, 'App', deviceLabel);
+      const group = parseByteStrict(groupRaw, 'Group', deviceLabel);
+      rows.push({
+        function: 'shutter',
+        name: '',
+        deviceName,
+        deviceType: deviceType || 'shutter',
+        app,
+        group,
+        controlType: controlType || 'up_down_off',
+        pulseSeconds: toNumOrDefault(pulseRaw, 0.25)
+      });
+    });
+    return rows;
+  }
+
+  function renderControlsList(list, clearDirtyState){
+    const controlBody = document.getElementById('controlBody');
+    const binaryBody = document.getElementById('binaryBody');
+    const measBody = document.getElementById('measBody');
+    const shutterBody = document.getElementById('shutterBody');
+    controlBody.innerHTML = '';
+    binaryBody.innerHTML = '';
+    measBody.innerHTML = '';
+    shutterBody.innerHTML = '';
+
+    const rows = Array.isArray(list) ? list : [];
+    for (const d of rows){
+      const f = (d.function || 'control');
+      if (f === 'control') controlBody.insertAdjacentHTML('beforeend', rowTemplateControl(d));
+      else if (f === 'binary_sensor') binaryBody.insertAdjacentHTML('beforeend', rowTemplateBinary(d));
+      else if (f === 'measurement') measBody.insertAdjacentHTML('beforeend', rowTemplateMeas(d));
+      else if (f === 'shutter') shutterBody.insertAdjacentHTML('beforeend', rowTemplateShutter(d));
+    }
+
+    document.querySelectorAll('#measBody tr').forEach(applyMeasurementVoltageVisibility);
+    applyBulkMeasurementVoltageVisibility();
+
+    if (clearDirtyState) clearDirty();
+  }
+
+  function applyVisibility(tr){
+    const func = tr.querySelector('.function')?.value || 'control';
+    const show = (cls, ok) => {
+      tr.querySelectorAll(cls).forEach(el => {
+        if (ok) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+      });
+    };
+
+    show('.col-control', func === 'control');
+    show('.col-binary', func === 'binary_sensor');
+    show('.col-measure', func === 'measurement');
+    show('.col-shutter', func === 'shutter');
+    show('.col-time', func === 'time');
+  }
+
+  async function loadConfig(){
+    try{
+      const boot = initialControlsBootstrap;
+      initialControlsBootstrap = null;
+      if (boot && Array.isArray(boot.controls)){
+        ensureCoreAppsLoaded().catch(() => {});
+        const list = boot.controls && boot.controls.length ? boot.controls : [];
+        renderControlsList(list, true);
+        return;
+      }
+      const corePromise = ensureCoreAppsLoaded().catch(() => {});
+      const r = await fetch('/config/controls', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const c = await r.json();
+      const list = c.controls && c.controls.length ? c.controls : [];
+      renderControlsList(list, true);
+      await corePromise;
+    }catch(e){
+      const msg = document.getElementById('controlSaveMsg');
+      if (msg) msg.textContent = 'ERR: ' + (e?.message ?? e);
+    }
+  }
+
+  function applyMeasurementSnapshot(s){
+    const map = new Map();
+    if (s?.measurement && s.measurement.length){
+      for (const row of s.measurement){
+        const unitId = String(row.deviceId);
+        if (!row.channels) continue;
+        for (const ch of row.channels){
+          const key = unitId + ':' + String(ch.channelId);
+          const num = Number(ch.value ?? 0);
+          const v = Number.isFinite(num) ? num.toFixed(3) : (ch.value ?? '').toString();
+          const rawUnit = (ch.unitSymbol || '').toString();
+          const u = rawUnit === 'C' ? '°C' : rawUnit;
+          map.set(key, v + (u ? ' ' + u : ''));
+        }
+      }
+    }
+    document.querySelectorAll('#measBody tr').forEach(tr => {
+      const unit = tr.querySelector('.unit')?.value?.trim() || tr.dataset.unit || '';
+      const ch = tr.querySelector('.channel')?.value?.trim() || tr.dataset.channel || '';
+      if (!unit || !ch) return;
+      const key = unit + ':' + ch;
+      const v = map.get(key);
+      if (v !== undefined){
+        const cell = tr.querySelector('.value');
+        if (cell) cell.textContent = v;
+      }
+    });
+  }
+
+  async function refreshMeasValues(){
+    try{
+      const boot = initialMeasurementBootstrap;
+      initialMeasurementBootstrap = null;
+      if (boot){
+        applyMeasurementSnapshot(boot);
+        return;
+      }
+      const r = await fetch('/control/state', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const s = await r.json();
+      applyMeasurementSnapshot(s);
+    }catch{
+      // ignore
+    }
+  }
+
+  function applyStatusSnapshot(s){
+    const list = s?.devices || [];
+    const map = new Map();
+    list.forEach(d => {
+      const name = (d.deviceName || d.name || '').trim().replaceAll(' ','_');
+      const key = `${(d.function||'control')}:${name}:${Number(d.app)}:${Number(d.group)}`;
+      map.set(key, d);
+    });
+    document.querySelectorAll('tbody tr').forEach(tr => {
+      const app = Number(tr.querySelector('.app')?.value || 0);
+      const group = Number(tr.querySelector('.group')?.value || 0);
+      const name = (tr.querySelector('.deviceName')?.value || '').trim().replaceAll(' ','_');
+      const func = tr.closest('#controlBody') ? 'control'
+        : tr.closest('#binaryBody') ? 'binary_sensor'
+        : tr.closest('#measBody') ? 'measurement'
+        : tr.closest('#shutterBody') ? 'shutter'
+        : 'control';
+      const key = `${func}:${name}:${app}:${group}`;
+      const d = map.get(key);
+      const st = tr.querySelector('.state');
+      const lv = tr.querySelector('.level');
+      const holdControlUi = func === 'control' && isDimmerUiHeld(tr);
+      if (d){
+        if (!holdControlUi && st) st.textContent = formatStateText(d.state);
+        if (!holdControlUi && lv) lv.textContent = formatLevelText(d.level);
+        if (!holdControlUi && (func === 'control' || func === 'shutter'))
+          setTriggerState(tr, isStateOn(d.state, d.level));
+        if (!holdControlUi && func === 'control')
+          updateDimmerUi(tr, d.level);
+      } else {
+        if (!holdControlUi && st) st.textContent = formatStateText('-');
+        if (!holdControlUi && lv) lv.textContent = formatLevelText('-');
+        if (!holdControlUi && (func === 'control' || func === 'shutter'))
+          setTriggerState(tr, false);
+        if (!holdControlUi && func === 'control')
+          updateDimmerUi(tr, 0);
+      }
+      if (func === 'control') syncRowDimmerAvailability(tr);
+    });
+  }
+
+  async function loadStatus(){
+    try{
+      const boot = initialStatusBootstrap;
+      initialStatusBootstrap = null;
+      if (boot){
+        applyStatusSnapshot(boot);
+        return;
+      }
+      const r = await fetch('/config/control/status', { cache: 'no-store' });
+      if (!r.ok) return;
+      const s = await r.json();
+      applyStatusSnapshot(s);
+    }catch{
+      // ignore
+    }
+  }
+
+  async function updateLicenceWarning(){
+    const warning = document.getElementById('licenceWarning');
+    if (!warning) return;
+    try{
+      const r = await fetch('/api/stats', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const stats = await r.json();
+      const licence = stats.licence || {};
+      if (licence.isValid){
+        warning.classList.add('hidden');
+      } else {
+        warning.textContent = 'Failure: Licence key is invalid.';
+        warning.classList.remove('hidden');
+      }
+    }catch{
+      // Leave the last visible state unchanged.
+    }
+  }
+
+  async function triggerRow(tr){
+    const app = Number(tr.querySelector('.app')?.value || NaN);
+    const group = Number(tr.querySelector('.group')?.value || NaN);
+    if (!Number.isFinite(app) || !Number.isFinite(group)) return;
+    const isShutter = !!tr.closest('#shutterBody');
+
+    const sendLevel = async (level) => {
+      await fetch('/control/lighting', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ app, ga: group, level })
+      });
+    };
+
+    if (isShutter){
+      const controlType = (tr.querySelector('.controlType')?.value || 'up_down_off').toString().trim().toLowerCase();
+      const pulseSeconds = Number(tr.querySelector('.pulse')?.value || '0.25');
+      try{
+        setTriggerState(tr, true);
+        if (controlType === 'pulse'){
+          await sendLevel(255);
+          const ms = Number.isFinite(pulseSeconds) && pulseSeconds > 0 ? Math.round(pulseSeconds * 1000) : 250;
+          setTimeout(() => {
+            sendLevel(0).catch(() => {});
+            setTriggerState(tr, false);
+          }, ms);
+        } else {
+          await sendLevel(249);
+          setTimeout(() => setTriggerState(tr, false), 350);
+        }
+      }catch{
+        setTriggerState(tr, false);
+      }
+      return;
+    }
+
+    const stateText = tr.querySelector('.state')?.textContent || '';
+    const levelText = tr.querySelector('.level')?.textContent || '';
+    const stateToken = stateText.includes(':') ? stateText.split(':')[1].trim() : stateText.trim();
+    const levelToken = levelText.includes(':') ? levelText.split(':')[1].trim() : levelText.trim();
+    const on = isStateOn(stateToken, levelToken);
+    const nextLevel = on ? 0 : 255;
+    try{
+      await sendLevel(nextLevel);
+      updateControlRowLevelUi(tr, nextLevel);
+    }catch{
+      // ignore trigger errors in UI; status refresh will reflect actual state.
+    }
+  }
+
+  async function sendRowLevel(tr, level){
+    const app = Number(tr?.querySelector('.app')?.value || NaN);
+    const group = Number(tr?.querySelector('.group')?.value || NaN);
+    if (!Number.isFinite(app) || !Number.isFinite(group)) return;
+    await fetch('/control/lighting', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ app, ga: group, level: clampLevel(level) })
+    });
+  }
+
+  async function saveConfig(msg, btn){
+    if (msg) msg.textContent = '';
+    let body;
+    try{
+      body = { controls: collectRows() };
+    }catch(e){
+      if (e?.kind === 'fieldValidation'){
+        openFieldValidationDialog(e.deviceLabel || '', e.fieldName || 'Field', e.fieldValue || '');
+      } else if (e?.kind === 'duplicateMeasurement'){
+        openFieldValidationDialogMessage(`Unit ${e.unitId} Channel ${e.channel} already in use.`);
+      } else if (msg) {
+        msg.textContent = 'ERR: ' + (e?.message ?? e);
+      }
+      return false;
+    }
+    try{
+      await ensureCoreAppsLoaded();
+    }catch(e){
+      if (msg) msg.textContent = 'ERR: ' + (e?.message ?? e);
+      return false;
+    }
+    const missingApp = bypassMissingAppCheckOnce ? null : findFirstMissingAppRequirement(body.controls);
+    bypassMissingAppCheckOnce = false;
+    if (missingApp !== null){
+      pendingMissingAppSave = { msg, btn };
+      openMissingAppDialog(missingApp);
+      return false;
+    }
+
+    try{
+      const r = await fetch('/config/controls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok){
+        let serverError = '';
+        try{
+          const payload = await r.json();
+          serverError = (payload?.error ?? '').toString().trim();
+        }catch{
+          // ignore
+        }
+        const err = new Error(serverError || ('HTTP ' + r.status));
+        err.serverError = serverError;
+        throw err;
+      }
+      flashButtonSuccess(btn);
+      if (msg) msg.textContent = '';
+      clearDirty();
+      return true;
+    }catch(e){
+      const serverError = (e?.serverError ?? e?.message ?? '').toString().trim();
+      if (/^Unit \d+ Channel \d+ already in use\.?$/i.test(serverError)){
+        openFieldValidationDialogMessage(serverError.endsWith('.') ? serverError : `${serverError}.`);
+      } else if (msg) {
+        msg.textContent = 'ERR: ' + (e?.message ?? e);
+      }
+      return false;
+    }
+  }
+
+  function openBulkDialog(kind){
+    const dlg = document.getElementById('bulkDialog');
+    document.getElementById('bulkKind').value = kind;
+    document.getElementById('bulkPrefixInput').value = '';
+    document.getElementById('bulkCountInput').value = '1';
+
+    const titleByKind = {
+      control: 'Bulk Add Control Devices',
+      binary_sensor: 'Bulk Add Binary Sensors',
+      measurement: 'Bulk Add Measurement Sensors',
+      shutter: 'Bulk Add Shutters'
+    };
+    document.getElementById('bulkDialogTitle').textContent = titleByKind[kind] || 'Bulk Add';
+
+    const setVisible = (cls, ok) => {
+      document.querySelectorAll(cls).forEach(el => {
+        if (ok) el.classList.remove('bulk-hidden');
+        else el.classList.add('bulk-hidden');
+      });
+    };
+
+    const isMeas = kind === 'measurement';
+    const isControl = kind === 'control';
+    const isBinary = kind === 'binary_sensor';
+    const isShutter = kind === 'shutter';
+
+    setVisible('.bulk-common', !isMeas);
+    setVisible('.bulk-control', isControl);
+    setVisible('.bulk-binary', isBinary);
+    setVisible('.bulk-measurement', isMeas);
+    setVisible('.bulk-shutter', isShutter);
+
+    if (!isMeas) {
+      document.getElementById('bulkAppInput').value = '56';
+      document.getElementById('bulkStartInput').value = '0';
+    }
+    document.getElementById('bulkControlTypeInput').value = 'switch';
+    document.getElementById('bulkBinaryInvertInput').checked = false;
+    document.getElementById('bulkMeasUnitInput').value = '1';
+    document.getElementById('bulkMeasChannelStartInput').value = '1';
+    document.getElementById('bulkMeasInputTypeInput').value = 'current';
+    document.getElementById('bulkMeasVoltageInput').value = '240';
+    document.getElementById('bulkShutterTypeInput').value = 'shutter';
+    document.getElementById('bulkShutterControlTypeInput').value = 'up_down_off';
+    document.getElementById('bulkShutterPulseInput').value = '0.25';
+    applyBulkMeasurementVoltageVisibility();
+
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else dlg.setAttribute('open', 'open');
+  }
+
+  function closeBulkDialog(){
+    const dlg = document.getElementById('bulkDialog');
+    if (typeof dlg.close === 'function') dlg.close();
+    else dlg.removeAttribute('open');
+  }
+
+  let pendingRemoveRow = null;
+  function openRemoveDialog(row){
+    pendingRemoveRow = row;
+    const dlg = document.getElementById('removeConfirmDialog');
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else dlg.setAttribute('open', 'open');
+  }
+
+  function closeRemoveDialog(){
+    const dlg = document.getElementById('removeConfirmDialog');
+    if (typeof dlg.close === 'function') dlg.close();
+    else dlg.removeAttribute('open');
+    pendingRemoveRow = null;
+  }
+
+  function bulkAddFromDialog(){
+    const kind = document.getElementById('bulkKind').value || 'control';
+    const prefix = document.getElementById('bulkPrefixInput').value.trim();
+    const count = Number(document.getElementById('bulkCountInput').value || 0);
+    if (!Number.isFinite(count) || count <= 0) return;
+
+    if (kind === 'measurement'){
+      const unit = Number(document.getElementById('bulkMeasUnitInput').value || 0);
+      const channelStart = Number(document.getElementById('bulkMeasChannelStartInput').value || 0);
+      const inputType = document.getElementById('bulkMeasInputTypeInput').value.trim() || 'current';
+      const voltageCalc = measurementInputUsesVoltage(inputType)
+        ? normalizeVoltageValue(document.getElementById('bulkMeasVoltageInput').value.trim() || '240')
+        : '240';
+      if (!Number.isFinite(unit) || !Number.isFinite(channelStart)) return;
+
+      const body = document.getElementById('measBody');
+      for(let i = 0; i < count; i++){
+        const ch = channelStart + i;
+        const name = prefix ? `${prefix}${ch}` : '';
+        body.insertAdjacentHTML('beforeend', rowTemplateMeas({
+          deviceName: name,
+          unitId: unit,
+          channel: ch,
+          inputType,
+          voltageCalc
+        }));
+      }
+      closeBulkDialog();
+      markDirty('measurement');
+      return;
+    }
+
+    const app = Number(document.getElementById('bulkAppInput').value || 56);
+    const start = Number(document.getElementById('bulkStartInput').value || 0);
+    if (!Number.isFinite(app) || !Number.isFinite(start)) return;
+
+    if (kind === 'control'){
+      const type = document.getElementById('bulkControlTypeInput').value.trim() || 'switch';
+      const body = document.getElementById('controlBody');
+      for(let i = 0; i < count; i++){
+        const ga = start + i;
+        const name = prefix ? `${prefix}${ga}` : '';
+        body.insertAdjacentHTML('beforeend', rowTemplateControl({
+          deviceName: name,
+          deviceType: type,
+          app,
+          group: ga
+        }));
+      }
+      closeBulkDialog();
+      markDirty('control');
+      return;
+    }
+
+    if (kind === 'binary_sensor'){
+      const invert = !!document.getElementById('bulkBinaryInvertInput').checked;
+      const body = document.getElementById('binaryBody');
+      for(let i = 0; i < count; i++){
+        const ga = start + i;
+        const name = prefix ? `${prefix}${ga}` : '';
+        body.insertAdjacentHTML('beforeend', rowTemplateBinary({
+          deviceName: name,
+          app,
+          group: ga,
+          invert
+        }));
+      }
+      closeBulkDialog();
+      markDirty('binary');
+      return;
+    }
+
+    if (kind === 'shutter'){
+      const type = document.getElementById('bulkShutterTypeInput').value.trim() || 'shutter';
+      const controlType = document.getElementById('bulkShutterControlTypeInput').value.trim() || 'up_down_off';
+      const pulse = Number(document.getElementById('bulkShutterPulseInput').value || 0.25);
+      if (!Number.isFinite(pulse)) return;
+      const body = document.getElementById('shutterBody');
+      for(let i = 0; i < count; i++){
+        const ga = start + i;
+        const name = prefix ? `${prefix}${ga}` : '';
+        body.insertAdjacentHTML('beforeend', rowTemplateShutter({
+          deviceName: name,
+          deviceType: type,
+          app,
+          group: ga,
+          controlType,
+          pulseSeconds: pulse
+        }));
+      }
+      closeBulkDialog();
+      markDirty('shutter');
+    }
+  }
+
+  document.getElementById('addControlBtn').addEventListener('click', () => {
+    document.getElementById('controlBody').insertAdjacentHTML('beforeend', rowTemplateControl());
+    markDirty('control');
+  });
+  document.getElementById('addBinaryBtn').addEventListener('click', () => {
+    document.getElementById('binaryBody').insertAdjacentHTML('beforeend', rowTemplateBinary());
+    markDirty('binary');
+  });
+  document.getElementById('addMeasBtn').addEventListener('click', () => {
+    document.getElementById('measBody').insertAdjacentHTML('beforeend', rowTemplateMeas());
+    markDirty('measurement');
+  });
+  document.getElementById('addShutterBtn').addEventListener('click', () => {
+    document.getElementById('shutterBody').insertAdjacentHTML('beforeend', rowTemplateShutter());
+    markDirty('shutter');
+  });
+  document.getElementById('bulkControlBtn').addEventListener('click', () => openBulkDialog('control'));
+  document.getElementById('bulkBinaryBtn').addEventListener('click', () => openBulkDialog('binary_sensor'));
+  document.getElementById('bulkMeasBtn').addEventListener('click', () => openBulkDialog('measurement'));
+  document.getElementById('bulkShutterBtn').addEventListener('click', () => openBulkDialog('shutter'));
+  document.getElementById('bulkDialogCancelBtn').addEventListener('click', closeBulkDialog);
+  document.getElementById('bulkDialogAddBtn').addEventListener('click', bulkAddFromDialog);
+  document.getElementById('removeNoBtn').addEventListener('click', closeRemoveDialog);
+  document.getElementById('removeYesBtn').addEventListener('click', () => {
+    let removedSection = null;
+    if (pendingRemoveRow?.closest('#controlBody')) removedSection = 'control';
+    else if (pendingRemoveRow?.closest('#binaryBody')) removedSection = 'binary';
+    else if (pendingRemoveRow?.closest('#measBody')) removedSection = 'measurement';
+    else if (pendingRemoveRow?.closest('#shutterBody')) removedSection = 'shutter';
+    if (pendingRemoveRow) pendingRemoveRow.remove();
+    if (removedSection) markDirty(removedSection);
+    closeRemoveDialog();
+  });
+  document.getElementById('removeConfirmDialog').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter'){
+      e.preventDefault();
+      document.getElementById('removeYesBtn').click();
+    }
+  });
+  document.getElementById('saveControlBtn').addEventListener('click', (e) =>
+    saveConfig(document.getElementById('controlSaveMsg'), e.currentTarget)
+  );
+  document.getElementById('saveBinaryBtn').addEventListener('click', (e) =>
+    saveConfig(document.getElementById('binarySaveMsg'), e.currentTarget)
+  );
+  document.getElementById('saveMeasBtn').addEventListener('click', (e) =>
+    saveConfig(document.getElementById('measSaveMsg'), e.currentTarget)
+  );
+  document.getElementById('saveShutterBtn').addEventListener('click', (e) =>
+    saveConfig(document.getElementById('shutterSaveMsg'), e.currentTarget)
+  );
+  document.getElementById('bulkMeasInputTypeInput').addEventListener('change', applyBulkMeasurementVoltageVisibility);
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.triggerCellWrap')) closeAllLevelPopups();
+  });
+  document.querySelectorAll('tbody').forEach(tb => tb.addEventListener('click', (e) => {
+    if (e.target && e.target.classList.contains('delBtn')) {
+      const tr = e.target.closest('tr');
+      if (tr) openRemoveDialog(tr);
+    }
+    if (e.target && (e.target.classList.contains('dimmerBtn') || e.target.closest('.dimmerBtn'))) {
+      e.preventDefault();
+      e.stopPropagation();
+      const tr = e.target.closest('tr');
+      if (tr) toggleLevelPopup(tr);
+      return;
+    }
+    if (e.target && (e.target.classList.contains('triggerBtn') || e.target.closest('.triggerBtn'))) {
+      const tr = e.target.closest('tr');
+      if (tr) triggerRow(tr);
+    }
+  }));
+  document.querySelectorAll('#controlBody').forEach(tb => {
+    tb.addEventListener('input', (e) => {
+      const tr = e.target.closest('tr');
+      if (!tr) return;
+      if (e.target.classList.contains('levelSlider')){
+        const percent = Number(e.target.value || 0);
+        const level = percentToLevel(percent);
+        updateControlRowLevelUi(tr, level);
+        scheduleRowLevelSend(tr, level);
+      }
+      if (e.target.classList.contains('type')){
+        syncRowDimmerAvailability(tr);
+      }
+    });
+    tb.addEventListener('change', async (e) => {
+      const tr = e.target.closest('tr');
+      if (!tr) return;
+      if (e.target.classList.contains('levelSlider')){
+        const level = percentToLevel(e.target.value || 0);
+        try{
+          scheduleRowLevelSend(tr, level);
+          updateControlRowLevelUi(tr, level);
+        }catch{
+          // ignore slider errors in UI; status refresh will correct display.
+        }
+      }
+      if (e.target.classList.contains('type')){
+        syncRowDimmerAvailability(tr);
+      }
+    });
+  });
+
+  document.querySelectorAll('#controlBody, #binaryBody, #measBody, #shutterBody').forEach(tb => {
+    tb.addEventListener('input', (e) => {
+      if (shouldIgnoreDirtyEvent(e.target)) return;
+      if (tb.id === 'controlBody') markDirty('control');
+      else if (tb.id === 'binaryBody') markDirty('binary');
+      else if (tb.id === 'measBody') markDirty('measurement');
+      else if (tb.id === 'shutterBody') markDirty('shutter');
+    });
+    tb.addEventListener('change', (e) => {
+      if (shouldIgnoreDirtyEvent(e.target)) return;
+      if (tb.id === 'controlBody') markDirty('control');
+      else if (tb.id === 'binaryBody') markDirty('binary');
+      else if (tb.id === 'measBody') markDirty('measurement');
+      else if (tb.id === 'shutterBody') markDirty('shutter');
+    });
+  });
+
+  document.getElementById('controlBody').addEventListener('focusout', (e) => {
+    if (!e.target.classList.contains('levelSlider')) return;
+    const tr = e.target.closest('tr');
+    if (!tr) return;
+    setTimeout(() => {
+      if (!tr.querySelector('.levelPopup')?.classList.contains('is-open')) delete tr.dataset.levelSending;
+    }, 0);
+  });
+
+  document.getElementById('measBody').addEventListener('change', (e) => {
+    if (e.target && e.target.classList.contains('inputType')){
+      applyMeasurementVoltageVisibility(e.target.closest('tr'));
+    }
+  });
+
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', async () => {
+      const section = th.dataset.sortSection;
+      if (!section) return;
+      const state = sortState[section];
+      if (state.idx === th.cellIndex) state.dir = state.dir * -1;
+      else { state.idx = th.cellIndex; state.dir = 1; }
+
+      if (dirtyBySection[section]){
+        openSortDialog({ kind: 'sort', section, th });
+        return;
+      }
+      sortTable(section, th);
+    });
+  });
+
+  document.getElementById('sortSaveBtn').addEventListener('click', async () => {
+    const pending = pendingSort;
+    closeSortDialog();
+    if (!pending) return;
+    const ok = await saveConfig(document.getElementById('controlSaveMsg'), document.getElementById('sortSaveBtn'));
+    if (!ok) return;
+    if (pending.kind === 'sort'){
+      sortTable(pending.section, pending.th);
+      return;
+    }
+    if (pending.kind === 'navigate' && pending.href){
+      window.location.href = pending.href;
+      return;
+    }
+  });
+
+  document.getElementById('sortContinueBtn').addEventListener('click', async () => {
+    const pending = pendingSort;
+    closeSortDialog();
+    if (!pending) return;
+    if (pending.kind === 'sort'){
+      await loadConfig();
+      sortTable(pending.section, pending.th);
+      return;
+    }
+    if (pending.kind === 'navigate' && pending.href){
+      window.location.href = pending.href;
+      return;
+    }
+  });
+  document.getElementById('sortCancelBtn').addEventListener('click', closeSortDialog);
+  document.getElementById('fieldValidationOkBtn').addEventListener('click', closeFieldValidationDialog);
+  document.getElementById('missingAppNoBtn').addEventListener('click', () => {
+    const pendingSave = pendingMissingAppSave;
+    closeMissingAppDialog();
+    pendingMissingApp = null;
+    pendingMissingAppSave = null;
+    if (pendingSave){
+      bypassMissingAppCheckOnce = true;
+      saveConfig(pendingSave.msg, pendingSave.btn);
+    }
+  });
+  document.getElementById('missingAppYesBtn').addEventListener('click', () => {
+    closeMissingAppDialog();
+    openMissingAppNameDialog();
+  });
+  document.getElementById('missingAppNameSaveBtn').addEventListener('click', async () => {
+    const appNum = pendingMissingApp?.app;
+    const appType = pendingMissingApp?.type || 'lighting';
+    const pendingSave = pendingMissingAppSave;
+    const input = document.getElementById('missingAppNameInput');
+    const name = (input?.value || '').trim();
+    if (!Number.isFinite(appNum)) return;
+    if (!name) return;
+    try{
+      await enableMissingApp(appNum, name, appType);
+      closeMissingAppNameDialog();
+      pendingMissingApp = null;
+      pendingMissingAppSave = null;
+      if (pendingSave)
+        await saveConfig(pendingSave.msg, pendingSave.btn);
+    }catch(e){
+      if (pendingSave?.msg) pendingSave.msg.textContent = 'ERR: ' + (e?.message ?? e);
+    }
+  });
+
+  document.querySelectorAll('.nav .navBtn').forEach(a => {
+    const href = a.getAttribute('href') || '';
+    if (!href || href === window.location.pathname) return;
+    a.addEventListener('click', (e) => {
+      if (!hasAnyDirty()) return;
+      e.preventDefault();
+      openSortDialog({ kind: 'navigate', href: a.href });
+    });
+  });
+
+  (async () => {
+    await loadConfig();
+    await Promise.all([refreshMeasValues(), loadStatus(), updateLicenceWarning()]);
+    setInterval(refreshMeasValues, 1000);
+    setInterval(loadStatus, 1000);
+    setInterval(updateLicenceWarning, 1000);
+  })();
+})();
+</script>
+</body>
+</html>

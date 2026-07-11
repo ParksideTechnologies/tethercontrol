@@ -1,0 +1,4 @@
+configuration:
+  ui_port:
+    name: UI Port
+    description: TCP port used by the Tether Control web interface.

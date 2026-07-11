@@ -1,0 +1,188 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="/favicon.ico" />
+  <title>Help - Tether Control</title>
+  <style>
+    :root {
+      --page-width: 1280px;
+      --bg: #eaf5ff;
+      --card: #f8fcff;
+      --line: #bfd8ea;
+      --ink: #173247;
+      --muted: #5e7b92;
+      --accent: #3b87c8;
+      --accent-2: #66b3e6;
+      --nav-bg: #e2eef8;
+    }
+    body { font-family: "Segoe UI", Tahoma, sans-serif; margin: 0; overflow-x: auto; color: var(--ink); background: #ffffff; }
+    .page { width: var(--page-width); min-width: var(--page-width); max-width: var(--page-width); margin: 24px auto; }
+    .card { width: 100%; max-width: 100%; box-sizing: border-box; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: color-mix(in srgb, var(--card) 96%, white);  }
+    .banner { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; padding: 10px 16px; border-radius: 14px; font-weight: 600; display:flex; justify-content:space-between; align-items:center; }
+    .nav { display:flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 12px 0; }
+    .nav a { text-decoration: none; }
+    .nav .navBtn { display:inline-block; padding: 4px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--nav-bg); color: var(--ink); }
+    .page-title-row { position:relative; min-height:42px; display:flex; align-items:center; margin: 0 0 16px; }
+    .page-title-row h1 { margin:0; }
+    .licence-warning { position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); color:var(--ink); background:var(--bad-bg); border:1px solid var(--bad-line); border-radius:999px; padding:4px 14px; font-weight:800; font-size:20px; text-align:center; white-space:nowrap; }
+    .licence-warning.hidden { display:none; }
+    .help-layout { display:grid; grid-template-columns: 1fr 3fr; gap: 18px; align-items: start; }
+    .help-index { border: 1px solid var(--line); border-radius: 16px; padding: 12px; position: sticky; top: 16px; background: color-mix(in srgb, var(--card) 96%, white); }
+    .help-index p { margin: 0 0 10px 0; font-weight: 700; }
+    .help-index a { display:block; padding: 6px 0; color: var(--ink); text-decoration: none; border-bottom: 1px solid #dceaf5; }
+    .help-index a:last-child { border-bottom: 0; }
+    .help-content section { border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin-bottom: 12px; background: #ffffff; }
+    .help-content h2 { margin: 0 0 8px 0; font-size: 1.1rem; font-weight: 700; border-radius: 8px; padding: 2px 6px; display: inline-block; transition: background-color 0.15s ease; }
+    .help-content section:target h2 { background: #d8ecfb; }
+    .help-content p { margin: 0 0 10px 0; line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="banner"><span>Tether Control</span><span>{{APP_VERSION}}</span></div>
+    <div class="nav">
+      <a class="navBtn" href="/">Configuration</a>
+      <a class="navBtn" href="/controls">C-Bus Group Setup</a>
+      <a class="navBtn" href="/tools">Tools</a>
+      <a class="navBtn" href="/help">Help</a>
+    </div>
+    <div class="page-title-row">
+      <h1>Help</h1>
+      <span id="licenceWarning" class="licence-warning hidden">Failure: Licence key is invalid.</span>
+    </div>
+    <div class="card">
+      <div class="help-layout">
+        <aside class="help-index">
+          <p>Help Index</p>
+          <a href="#interface">Interface</a>
+          <a href="#status">Status</a>
+          <a href="#cbus-applications">C-Bus Applications</a>
+          <a href="#mqtt-broker">MQTT Broker</a>
+          <a href="#time-manager">Network Time Manager</a>
+          <a href="#controls-page">C-Bus Group Setup</a>
+          <a href="#tools-page">Tools</a>
+          <a href="#saving">Saving Changes</a>
+          <a href="#troubleshooting">Troubleshooting Basics</a>
+        </aside>
+        <main class="help-content">
+          <section id="interface">
+            <h2><b>Interface</b></h2>
+            <p>This section controls how Tether Control talks to your C-Bus network. Control mode is for normal day-to-day operation, including controlling C-Bus from Home Assistant and updating entities from C-Bus network events. Interface mode provides a direct C-Bus connection for tools such as Toolkit and Commission.</p>
+            <p>The Enable, Disable and Reset buttons are for recovering from serial communication faults. If communication drops out, Reset is usually the best first step.</p>
+            <p>The SIM On and SIM Off buttons control the on-board relay used to disconnect and reconnect the C-Bus interface from the network. Use these to physically remove the interface from the network if the interface locks up.</p>
+          </section>
+
+          <section id="status">
+            <h2><b>Status</b></h2>
+            <p>Status pills show current health at a glance. Green means working. Red means attention is needed.</p>
+            <p>Serial and SIM show communication and relay state. C-Bus Voltage helps confirm the bus is present and readable.</p>
+            <p>In Interface mode, the Client, Bytes and Last RX lines help confirm the connected tool and live traffic. Last error gives the most recent problem message if something fails.</p>
+          </section>
+
+          <section id="cbus-applications">
+            <h2><b>C-Bus Applications</b></h2>
+            <p>This area defines which C-Bus applications Tether Control should use and how they are named on the system.</p>
+            <p>Tether Control supports lighting applications 48 to 95 and the measurement application. Each enabled application can have a custom name.</p>
+            <p>Only applications enabled in this section will be functional.</p>
+          </section>
+
+          <section id="mqtt-broker">
+            <h2><b>MQTT Broker</b></h2>
+            <p>This section connects Tether Control to your MQTT broker. Enter the broker address, port and any login details needed by your broker.</p>
+            <p>The status line confirms whether the connection is active. If disconnected, check address, port, username and password first.</p>
+            <p>Configured entities are published to Home Assistant under a single MQTT device named Tether Control. If your broker uses restrictions, make sure Tether Control is allowed to connect and publish discovery, state and command topics.</p>
+            <p>Tether Control publishes availability information so C-Bus entities become unavailable when control communications stop or Interface mode is active. Diagnostic entities for Mode, Serial Comms, SIM State and C-Bus Voltage remain available while Tether Control itself is connected to MQTT.</p>
+          </section>
+
+          <section id="time-manager">
+            <h2><b>Network Time Manager</b></h2>
+            <p>This section controls when time and date updates are sent to the C-Bus network for devices such as DLTs and eDLTs. Updates can be sent daily, at a repeating interval, or only when requested.</p>
+            <p>The time and date are taken from the host system. Use Set Now to send an immediate update after a network shutdown, device reconnection or clock correction. Scheduled updates inside the 11:50 PM to 12:10 AM no-go period are delayed until 12:11 AM.</p>
+          </section>
+
+          <section id="controls-page">
+            <h2><b>C-Bus Group Setup</b></h2>
+            <p>The C-Bus Group Setup page maps C-Bus groups and measurement channels to MQTT entities. These entities appear under the Tether Control device in Home Assistant.</p>
+            <p>Controls are output groups configured as a switch, light, dimmer or fan. The toggle provides quick on/off testing. Dimmers and fans also have a level control for setting the C-Bus level; the slider can be dragged or adjusted with the keyboard arrow keys.</p>
+            <p>Binary Sensors expose a C-Bus group state as an on/off sensor. Use Invert when the required sensor state is the opposite of the C-Bus group state.</p>
+            <p>Measurement Sensors map a C-Bus measurement unit and channel to current, temperature or humidity. Current measurements also create voltage, power and energy entities using the configured voltage.</p>
+            <p>Shutters map C-Bus groups to shutters, roller doors, blinds or curtains and support Up/Down/Off, Toggle and Pulse control methods. Their toggle button provides quick setup testing.</p>
+            <p>Entity Name becomes the Home Assistant entity name. Spaces are preserved in the displayed name and converted to underscores where Home Assistant requires an identifier-safe value.</p>
+            <p>Use Add for individual entries or Bulk Add to create a numbered group or channel range. Saving a group that uses an application which is not enabled will offer to add that application.</p>
+            <p>Use Import C-Bus Groups on the Tools page to merge entries from Toolkit XML or HTML project documents and compatible Node-RED flows JSON files. Import is experimental and may infer device types from names.</p>
+            <p>Click a column heading to sort a section. If configuration changes are waiting to be saved, Tether Control will ask whether to save or continue without saving before sorting or leaving the page.</p>
+          </section>
+
+          <section id="tools-page">
+            <h2><b>Tools</b></h2>
+            <p>The Tools page contains C-Bus group import and configuration transfer functions. C-Bus group imports are checked for existing address assignments and entity names before they are merged.</p>
+            <p>Configuration Export lets you select C-Bus Applications, C-Bus Group Setup, MQTT Broker, Network Time Manager and Interface sections individually or export them all.</p>
+            <p>Configuration Import reads a Tether Control export and lets you select which available sections to apply. C-Bus Group Setup entries can be merged with or replace the current list.</p>
+          </section>
+
+          <section id="saving">
+            <h2><b>Saving Changes</b></h2>
+            <p>Configuration changes are staged on screen until you press the relevant Save button. If you navigate away with unsaved configuration changes, Tether Control will offer to save them or continue without saving.</p>
+            <p>On the C-Bus Group Setup page, any Save button commits the complete current entity list. Live state changes made with a toggle or level slider are sent immediately and do not need to be saved.</p>
+          </section>
+
+          <section id="troubleshooting">
+            <h2><b>Troubleshooting Basics</b></h2>
+            <p>If something stops responding, first check the status pills and last error line. These usually point to the problem area quickly.</p>
+            <p>Confirm the relevant settings have been saved, use Reset in the Interface section, and check that power and network links are stable.</p>
+            <p>If issues continue, capture what changed just before the problem started. That makes remote support faster and more accurate.</p>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+  <script>
+  (() => {
+    async function updateLicenceWarning(){
+      const warning = document.getElementById('licenceWarning');
+      if (!warning) return;
+      try{
+        const r = await fetch('/api/stats', { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const stats = await r.json();
+        const licence = stats.licence || {};
+        if (licence.isValid){
+          warning.classList.add('hidden');
+        } else {
+          warning.textContent = 'Failure: Licence key is invalid.';
+          warning.classList.remove('hidden');
+        }
+      }catch{
+        // Leave the last visible state unchanged.
+      }
+    }
+
+    const uiSessionId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+    const uiPath = window.location.pathname || '/help';
+    const payload = JSON.stringify({ sessionId: uiSessionId, path: uiPath });
+    fetch('/ui/session/open', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload
+    }).catch(() => {});
+    window.addEventListener('pagehide', () => {
+      try{
+        if (navigator.sendBeacon){
+          navigator.sendBeacon('/ui/session/close', new Blob([payload], { type: 'application/json' }));
+        } else {
+          fetch('/ui/session/close', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+        }
+      }catch{
+        // ignore
+      }
+    });
+    updateLicenceWarning();
+    setInterval(updateLicenceWarning, 1000);
+  })();
+  </script>
+</body>
+</html>

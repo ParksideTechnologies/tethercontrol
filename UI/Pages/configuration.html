@@ -1,0 +1,1770 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="/favicon.ico" />
+  <title>Configuration - Tether Control</title>
+  <style>
+    :root {
+      --page-width: 1280px;
+      --bg: #eaf5ff;
+      --card: #f8fcff;
+      --line: #bfd8ea;
+      --ink: #173247;
+      --muted: #5e7b92;
+      --accent: #3b87c8;
+      --accent-2: #66b3e6;
+      --ok-bg: #d9f2da;
+      --ok-line: #5f9f68;
+      --bad-bg: #f8ddd7;
+      --bad-line: #c56b56;
+      --nav-bg: #e2eef8;
+      --code-bg: #eef6fc;
+      --dialog-backdrop: rgba(23, 50, 71, 0.42);
+      --log-bg: #173247;
+      --log-line: rgba(255,255,255,0.08);
+    }
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      margin: 0;
+      overflow-x: auto;
+      color: var(--ink);
+      background: #ffffff;
+    }
+    .page { width: var(--page-width); min-width: var(--page-width); max-width: var(--page-width); margin: 24px auto; }
+    .card, .box {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--card) 96%, white);
+
+    }
+    .row { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .pill {
+      display:inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: white;
+    }
+    .ok { border-color: var(--ok-line); }
+    .bad { border-color: var(--bad-line); }
+    .status-pill { display:inline-flex; align-items:center; padding: 4px 12px; border-radius: 999px; font-weight: 700; color: var(--ink); border: 1px solid var(--line); }
+    .status-ok { background: var(--ok-bg); border-color: var(--ok-line); }
+    .status-bad { background: var(--bad-bg); border-color: var(--bad-line); }
+    code { background: var(--code-bg); padding: 2px 6px; border-radius: 6px; }
+    .muted { color: var(--muted); font-size: 0.95em; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .small { width: 140px; }
+
+    .log {
+      background: var(--log-bg);
+      color: #eaf5ff;
+      padding: 10px;
+      border-radius: 14px;
+      overflow:auto;
+      max-height: 380px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.35;
+      white-space: pre;
+    }
+    .log .line{
+      padding: 2px 0;
+      border-bottom: 1px solid var(--log-line);
+      white-space: pre;
+      overflow-wrap: normal;
+      word-break: normal;
+    }
+    .log .line:last-child{ border-bottom: none; }
+
+    select, button, input { font: inherit; }
+    input, select {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      color: var(--ink);
+      padding: 4px 8px;
+    }
+    button {
+      padding: 2px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--nav-bg);
+      color: var(--ink);
+      cursor: pointer;
+      transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+    button:hover { background: #d8ecfb; border-color: var(--accent); }
+    button:active { transform: translateY(1px); }
+    button.btn-flash-ok { background: var(--ok-bg); border-color: var(--ok-line); color: #1f5e33; }
+    .banner {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color:#fff;
+      padding: 10px 16px;
+      border-radius: 14px;
+      font-weight: 600;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+
+    }
+    .nav { display:flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 12px 0; }
+    .nav a { text-decoration: none; }
+    .nav .navBtn { display:inline-block; padding: 4px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--nav-bg); color: var(--ink); }
+    .password-field { position: relative; display: inline-flex; align-items: center; }
+    .password-field input { min-width: 160px; padding-right: 36px; box-sizing: border-box; }
+    .password-toggle {
+      position: absolute;
+      right: 3px;
+      top: 50%;
+      width: 30px;
+      height: 26px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transform: translateY(-50%);
+    }
+    .password-toggle:hover { background: transparent; border-color: transparent; color: var(--ink); }
+    .password-toggle:active { transform: translateY(-50%); }
+    .password-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .password-toggle .eye-slash { display: none; }
+    .password-toggle[aria-pressed="true"] .eye-slash { display: block; }
+    .modeMsg { display:inline-block; max-width:70px; line-height:1.1; white-space:normal; }
+    .hidden { display:none !important; }
+    .core-app-wrap { display:grid; grid-template-columns: 1fr auto; gap: 12px; align-items:end; }
+    .core-app-table { min-width: 0; }
+    .core-app-actions { margin-top:0; justify-content:flex-end; }
+    dialog#cniDiscoverDialog, dialog#unsavedConfirmDialog { border: 1px solid var(--line); border-radius: 18px; padding: 14px; background: color-mix(in srgb, var(--card) 97%, white); color: var(--ink); }
+    dialog#cniDiscoverDialog { min-width: 760px; max-width: 95vw; }
+    dialog#unsavedConfirmDialog { min-width: 360px; }
+    dialog#cniDiscoverDialog::backdrop, dialog#unsavedConfirmDialog::backdrop { background: var(--dialog-backdrop); }
+    .cni-discovery-loading { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; min-height: 140px; }
+    .cni-discovery-spinner { width: 30px; height: 30px; border: 3px solid #d6e5f1; border-top-color: var(--accent); border-radius: 50%; animation: cni-spin 0.8s linear infinite; }
+    .cni-discovery-state { width: 30px; height: 30px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-weight: 700; font-size: 18px; border: 2px solid transparent; }
+    .cni-discovery-state.ok { color: #1f5e33; background: var(--ok-bg); border-color: var(--ok-line); }
+    .cni-discovery-state.bad { color: #7a1f1f; background: var(--bad-bg); border-color: var(--bad-line); }
+    @keyframes cni-spin { to { transform: rotate(360deg); } }
+    .cni-discovery-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .cni-discovery-table th, .cni-discovery-table td { border-bottom: 1px solid #dceaf5; padding: 6px; text-align: left; }
+    .cni-discovery-table th { font-weight: 600; }
+    .cni-discovery-table td:first-child, .cni-discovery-table th:first-child { width: 52px; text-align: center; }
+    .cni-discovery-actions { margin-top:12px; justify-content:flex-end; }
+    .page-title-row { position:relative; min-height:42px; display:flex; align-items:center; margin: 0 0 16px; }
+    .page-title-row h1 { margin:0; }
+    .licence-warning { position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); color:var(--ink); background:var(--bad-bg); border:1px solid var(--bad-line); border-radius:999px; padding:4px 14px; font-weight:800; font-size:20px; text-align:center; white-space:nowrap; }
+    .licence-warning.hidden { display:none; }
+    #iface2Card { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="banner"><span>Tether Control</span><span>{{APP_VERSION}}</span></div>
+    <div class="nav">
+      <a class="navBtn" href="/">Configuration</a>
+      <a class="navBtn" href="/controls">C-Bus Group Setup</a>
+      <a class="navBtn" href="/tools">Tools</a>
+      <a class="navBtn" href="/help">Help</a>
+    </div>
+    <div class="page-title-row">
+      <h1>Configuration</h1>
+      <span id="licenceWarning" class="licence-warning hidden">Failure: Licence key is invalid.</span>
+    </div>
+
+    <div class="card">
+    <div class="card" id="interfacesCard">
+    <p style="margin:0 0 8px 0;"><b>Interface</b></p>
+    <div class="row" style="margin-top:8px;">
+      <span class="pill">
+        Type: SIM
+        <input id="iface1Type" type="hidden" value="sim" />
+      </span>
+      <span class="pill" id="iface1DeviceWrap">
+        <span id="iface1DeviceLabel">Device:</span>
+        <input id="serialDeviceInput" style="min-width:160px;" value="/dev/ttyAMA0" readonly />
+      </span>
+      <span class="pill" id="iface1ModeWrap">
+        Mode:
+        <select id="modeSel">
+          <option value="control">Control</option>
+          <option value="interface">Interface</option>
+        </select>
+      </span>
+      <span class="pill hidden" id="iface1HostPortWrapTop">
+        <span id="iface1HostPortLabel">Host Port:</span>
+        <input id="iface1HostPortInput" value="10001" style="width:88px;" />
+      </span>
+      <span style="display:none;">
+        <input id="iface1PortInput" value="10001" />
+        <button id="iface1DiscoverBtn" type="button"></button>
+        <span id="iface1PortWrapTop"></span>
+        <span id="iface1PortLabel"></span>
+      </span>
+      <span class="muted modeMsg" id="modeMsg"></span>
+    </div>
+
+    <div style="margin-top:10px;">
+      <p style="margin:0 0 8px 0;"><b>Status</b></p>
+      <div class="row">
+        <span id="statusSerial" class="status-pill status-bad">Serial: Closed</span>
+        <span id="statusSim" class="status-pill status-bad">SIM: Off</span>
+        <span id="statusVoltage" class="status-pill status-bad">C-Bus Voltage: --.-V</span>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;" id="iface1StatsBox">
+      <p><b>Client:</b> <span id="clientRemote">-</span> (since <span id="clientSince">-</span>)</p>
+      <p><b>Bytes:</b> <span id="bytesLabelA">Serial→TCP</span> <span id="bST">0</span> | <span id="bytesLabelB">TCP→Serial</span> <span id="bTS">0</span></p>
+      <p><b>Last RX:</b> <span id="lastRxLabelA">Serial</span> <span id="lastSRx">-</span> | <span id="lastRxLabelB">TCP</span> <span id="lastTRx">-</span></p>
+      <p><b>Uptime:</b> <span id="uptime">-</span></p>
+      <p><b>Last error:</b> <span id="lastErr">-</span></p>
+      <div class="row" style="margin-top:8px; justify-content: space-between;">
+        <span class="pill" id="iface1PortWrap">
+          Port:
+          <button id="portEnableBtn" type="button">Enable</button>
+          <button id="portDisableBtn" type="button">Disable</button>
+          <button id="portResetBtn" type="button">Reset</button>
+          <span class="muted" id="portMsg"></span>
+        </span>
+        <span class="pill" id="iface1SimWrap">
+          SIM:
+          <button id="simOnBtn" type="button">On</button>
+          <button id="simOffBtn" type="button">Off</button>
+          <span class="muted" id="simMsg"></span>
+        </span>
+        <span style="flex:1;"></span>
+        <span style="display:flex; gap:8px; align-items:center;">
+          <button id="ifaceSaveBtn" type="button">Save</button>
+        </span>
+      </div>
+    </div>
+
+    <div id="iface2Card" style="display:none !important; margin-top:12px;">
+    <p style="margin:0 0 8px 0;"><b>Interface 2</b></p>
+    <div class="row">
+      <span class="pill">
+        Type:
+        <select id="iface2Type">
+          <option value="sim">SIM</option>
+          <option value="pci">PCI</option>
+          <option value="cni">CNI</option>
+        </select>
+      </span>
+      <span class="pill" id="iface2DeviceWrap">
+        <span id="iface2DeviceLabel">Device:</span>
+        <input id="iface2DeviceInput" style="min-width:160px;" />
+      </span>
+      <span class="pill" id="iface2PortWrapTop">
+        <span id="iface2PortLabel">Host Port:</span>
+        <input id="iface2PortInput" placeholder="10002" class="small" />
+      </span>
+      <button id="iface2DiscoverBtn" type="button" class="hidden">Discover CNI</button>
+      <span class="pill" id="iface2HostPortWrapTop">
+        <span id="iface2HostPortLabel">Host Port:</span>
+        <input id="iface2HostPortInput" placeholder="2000" class="small" />
+      </span>
+      <span class="pill">
+        Mode: Interface
+      </span>
+    </div>
+
+    <div style="margin-top:10px;">
+      <p style="margin:0 0 8px 0;"><b>Status</b></p>
+      <div class="row">
+        <span id="statusSerial2" class="status-pill status-bad">Serial: Closed</span>
+        <span id="statusSim2" class="status-pill status-bad hidden">SIM: Off</span>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <p><b>Client:</b> <span id="iface2ClientRemote">-</span> (since <span id="iface2ClientSince">-</span>)</p>
+      <p><b>Bytes:</b> <span id="iface2BytesLabelA">Serial→TCP</span> <span id="iface2bST">0</span> | <span id="iface2BytesLabelB">TCP→Serial</span> <span id="iface2bTS">0</span></p>
+      <p><b>Last RX:</b> <span id="iface2LastRxLabelA">Serial</span> <span id="iface2LastSRx">-</span> | <span id="iface2LastRxLabelB">TCP</span> <span id="iface2LastTRx">-</span></p>
+      <p><b>Last error:</b> <span id="iface2LastErr">-</span></p>
+      <div class="row" style="margin-top:8px; justify-content: space-between;">
+        <span class="pill" id="iface2PortWrap">
+          Port:
+          <button id="port2EnableBtn" type="button">Enable</button>
+          <button id="port2DisableBtn" type="button">Disable</button>
+          <button id="port2ResetBtn" type="button">Reset</button>
+          <span class="muted" id="port2Msg"></span>
+        </span>
+        <span class="pill" id="iface2SimWrap">
+          SIM:
+          <button id="sim2OnBtn" type="button">On</button>
+          <button id="sim2OffBtn" type="button">Off</button>
+          <span class="muted" id="sim2Msg"></span>
+        </span>
+        <span style="flex:1;"></span>
+        <span style="display:flex; gap:8px; align-items:center;">
+          <button id="iface2DisableBtn" type="button">Remove Interface</button>
+          <button id="ifaceSaveBtn2" type="button">Save</button>
+        </span>
+      </div>
+    </div>
+    </div>
+    </div>
+
+    <div class="box" style="margin-top:12px;">
+      <div class="row">
+        <p style="margin:0;"><b>C-Bus Applications</b></p>
+      </div>
+      <div class="core-app-wrap">
+        <div class="core-app-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Enabled</th>
+                <th>Type</th>
+                <th>App</th>
+                <th>Name</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="coreAppBody"></tbody>
+          </table>
+        </div>
+        <div class="row core-app-actions">
+          <span class="muted" id="coreMsg"></span>
+          <button id="coreAddBtn" type="button">Add App</button>
+          <button id="coreSaveBtn" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="box" style="margin-top:12px;">
+      <div class="row" style="justify-content: space-between;">
+        <p style="margin:0;"><b>MQTT Broker</b></p>
+      </div>
+      <div class="row" style="margin-bottom:6px;">
+        <span>IP:</span>
+        <input id="mqttHost" placeholder="Host" style="min-width:180px;" />
+        <span>Port:</span>
+        <input id="mqttPort" placeholder="Port" class="small" />
+        <span>Username:</span>
+        <input id="mqttUser" placeholder="Username" style="min-width:160px;" />
+        <span>Password:</span>
+        <span class="password-field">
+          <input id="mqttPass" type="password" autocomplete="current-password" placeholder="Password" />
+          <button id="mqttPassToggle" class="password-toggle" type="button" aria-label="Show MQTT password" aria-pressed="false" title="Show MQTT password">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z"></path>
+              <circle cx="12" cy="12" r="2.6"></circle>
+              <path class="eye-slash" d="M4 4l16 16"></path>
+            </svg>
+          </button>
+        </span>
+        <span style="flex:1;"></span>
+        <span class="muted" id="mqttMsg"></span>
+      </div>
+      <div style="margin-top:10px;">
+        <p style="margin:0 0 8px 0;"><b>Status</b></p>
+        <div class="row" style="justify-content: space-between;">
+          <span id="statusMqtt" class="status-pill status-bad">MQTT: Disconnected</span>
+          <span style="flex:1;"></span>
+          <button id="mqttSaveBtn" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="box" style="margin-top:12px;">
+      <div class="row" style="justify-content: space-between;">
+        <p style="margin:0;"><b>Network Time Manager</b></p>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <label><input id="timeEnabled" type="checkbox" /> Enable</label>
+        <label><input id="timeSendTime" type="checkbox" /> Send Time</label>
+        <label><input id="timeSendDate" type="checkbox" /> Send Date</label>
+        <label>Mode
+          <select id="timeMode">
+            <option value="daily">daily</option>
+            <option value="interval">interval</option>
+            <option value="none">none</option>
+          </select>
+        </label>
+        <span>Time</span>
+        <input id="timeDaily" placeholder="02:00" class="small" />
+        <span>Interval</span>
+        <input id="timeInterval" placeholder="60mins" class="small" />
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <span class="muted">No-go zone 11:50PM–12:10AM. If scheduled during this window, it will send at 12:11AM.</span>
+        <span style="flex:1;"></span>
+        <span class="muted" id="timeMsg"></span>
+        <button id="timeNowBtn" type="button">Set Now</button>
+        <button id="timeSaveBtn" type="button">Save</button>
+      </div>
+    </div>
+
+    <dialog id="cniDiscoverDialog">
+      <p style="margin:0 0 8px 0;">Discover CNI</p>
+      <div id="cniDiscoverLoading" class="cni-discovery-loading">
+        <div id="cniDiscoverIndicator" class="cni-discovery-spinner"></div>
+        <div id="cniDiscoverStatusText" class="muted">Searching for CNIs...</div>
+      </div>
+      <div id="cniDiscoverResults" class="hidden">
+      <div id="cniDiscoverMsg" class="muted" style="margin-bottom:8px;"></div>
+      <table class="cni-discovery-table">
+        <thead>
+          <tr>
+            <th>Use</th>
+            <th>Name</th>
+            <th>Model</th>
+            <th>IP</th>
+            <th>Port</th>
+            <th>MAC</th>
+          </tr>
+        </thead>
+        <tbody id="cniDiscoverBody"></tbody>
+      </table>
+      </div>
+      <div class="row cni-discovery-actions">
+        <button id="cniDiscoverRescanBtn" type="button">Re-Scan</button>
+        <button id="cniDiscoverSelectBtn" type="button">Select</button>
+        <button id="cniDiscoverCancelBtn" type="button">Cancel</button>
+      </div>
+    </dialog>
+
+    <dialog id="unsavedConfirmDialog">
+      <p style="margin-top:0;">Unsaved configuration changes will be lost. Save?</p>
+      <div class="row" style="justify-content:flex-end; margin-top:12px;">
+        <button id="unsavedSaveBtn" type="button">Save</button>
+        <button id="unsavedContinueBtn" type="button">Continue without saving</button>
+        <button id="unsavedCancelBtn" type="button">Cancel</button>
+      </div>
+    </dialog>
+
+  </div>
+  </div>
+  </div>
+
+<script>
+(() => {
+  const uiSessionId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+  const uiPath = window.location.pathname || '/';
+  function logUiOpen(){
+    fetch('/ui/session/open', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: uiSessionId, path: uiPath })
+    }).catch(() => {});
+  }
+  function logUiClose(){
+    const payload = JSON.stringify({ sessionId: uiSessionId, path: uiPath });
+    try{
+      if (navigator.sendBeacon){
+        navigator.sendBeacon('/ui/session/close', new Blob([payload], { type: 'application/json' }));
+      } else {
+        fetch('/ui/session/close', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+      }
+    }catch{
+      // ignore
+    }
+  }
+  logUiOpen();
+  window.addEventListener('pagehide', logUiClose);
+
+  const REFRESH_MS = 1000;
+  let lastStateHtml = '';
+  let iface1Cfg = { tcpListenAddress: "0.0.0.0", tcpListenPort: 10001, cniPort: 10001, serialDevice: "/dev/ttyUSB0" };
+  let iface2Cfg = { tcpListenAddress: "0.0.0.0", tcpListenPort: 10002, cniPort: 10001, serialDevice: "/dev/ttyUSB0", enabled: false };
+  let iface1LastType = 'pci';
+  let iface2LastType = 'pci';
+  let cniDiscoverTarget = 1;
+  let coreDirty = false;
+  let pendingNavHref = '';
+
+  function fmtNum(n){
+    try { return Number(n ?? 0).toLocaleString(); } catch { return String(n ?? 0); }
+  }
+
+  function markDirty(el){
+    if (!el) return;
+    el.dataset.dirty = '1';
+  }
+
+  function clearDirty(el){
+    if (!el) return;
+    delete el.dataset.dirty;
+  }
+
+  function setInputValue(el, value){
+    if (!el || el.matches(':focus') || el.dataset.dirty === '1') return;
+    el.value = value ?? '';
+  }
+
+  function setChecked(el, value){
+    if (!el || el.matches(':focus') || el.dataset.dirty === '1') return;
+    el.checked = !!value;
+  }
+
+  function setSelectValue(el, value){
+    if (!el || el.matches(':focus') || el.dataset.dirty === '1') return;
+    el.value = value ?? '';
+  }
+
+  function wireDirty(id, evt = 'input'){
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener(evt, () => markDirty(el));
+  }
+
+  function isDirty(id){
+    return document.getElementById(id)?.dataset?.dirty === '1';
+  }
+
+  function hasUnsavedConfig(){
+    return coreDirty
+      || isDirty('timeEnabled')
+      || isDirty('timeSendTime')
+      || isDirty('timeSendDate')
+      || isDirty('timeMode')
+      || isDirty('timeDaily')
+      || isDirty('timeInterval')
+      || isDirty('mqttHost')
+      || isDirty('mqttPort')
+      || isDirty('mqttUser')
+      || isDirty('mqttPass')
+      || isDirty('serialDeviceInput')
+      || isDirty('iface1PortInput')
+      || isDirty('iface1HostPortInput')
+      || isDirty('modeSel');
+  }
+
+  function openUnsavedDialog(href){
+    pendingNavHref = href || '';
+    const dlg = document.getElementById('unsavedConfirmDialog');
+    if (!dlg) return;
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else dlg.setAttribute('open', 'open');
+  }
+
+  function closeUnsavedDialog(){
+    const dlg = document.getElementById('unsavedConfirmDialog');
+    if (!dlg) return;
+    if (typeof dlg.close === 'function') dlg.close();
+    else dlg.removeAttribute('open');
+    pendingNavHref = '';
+  }
+
+  function flashSuccess(msgEl, text, ms = 3000){
+    if (!msgEl) return;
+    msgEl.textContent = text;
+    const token = String(Date.now()) + Math.random().toString(16).slice(2);
+    msgEl.dataset.flashToken = token;
+    setTimeout(() => {
+      if (msgEl.dataset.flashToken === token && msgEl.textContent === text){
+        msgEl.textContent = '';
+      }
+    }, ms);
+  }
+
+  function flashButtonSuccess(btn, ms = 450){
+    if (!btn) return;
+    const token = String(Date.now()) + Math.random().toString(16).slice(2);
+    btn.dataset.flashToken = token;
+    btn.classList.add('btn-flash-ok');
+    setTimeout(() => {
+      if (btn.dataset.flashToken === token){
+        btn.classList.remove('btn-flash-ok');
+      }
+    }, ms);
+  }
+
+  async function loadTimeConfig(){
+    try{
+      const r = await fetch('/config/time', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const c = await r.json();
+      setChecked(document.getElementById('timeEnabled'), !!c.enabled);
+      setChecked(document.getElementById('timeSendTime'), c.sendTime !== false);
+      setChecked(document.getElementById('timeSendDate'), c.sendDate !== false);
+      setSelectValue(document.getElementById('timeMode'), c.scheduleMode || 'daily');
+      setInputValue(document.getElementById('timeDaily'), c.dailyTime || '02:00');
+      setInputValue(document.getElementById('timeInterval'), c.intervalMins ?? 60);
+    }catch(e){
+      document.getElementById('timeMsg').textContent = 'ERR: ' + (e?.message ?? e);
+    }
+  }
+
+  async function saveTimeConfig(ev){
+    const btn = ev?.currentTarget;
+    const msg = document.getElementById('timeMsg');
+    if (msg) msg.textContent = '';
+    const body = {
+      enabled: document.getElementById('timeEnabled').checked,
+      sendTime: document.getElementById('timeSendTime').checked,
+      sendDate: document.getElementById('timeSendDate').checked,
+      scheduleMode: document.getElementById('timeMode').value,
+      dailyTime: document.getElementById('timeDaily').value.trim(),
+      intervalMins: Number(document.getElementById('timeInterval').value || 60)
+    };
+    try{
+      const r = await fetch('/config/time', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      clearDirty(document.getElementById('timeEnabled'));
+      clearDirty(document.getElementById('timeSendTime'));
+      clearDirty(document.getElementById('timeSendDate'));
+      clearDirty(document.getElementById('timeMode'));
+      clearDirty(document.getElementById('timeDaily'));
+      clearDirty(document.getElementById('timeInterval'));
+      flashButtonSuccess(btn);
+      return true;
+    }catch(e){
+      msg.textContent = 'ERR: ' + (e?.message ?? e);
+      return false;
+    }
+  }
+
+  async function loadMqttConfig(){
+    try{
+      const r = await fetch('/config/mqtt', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const c = await r.json();
+      setInputValue(document.getElementById('mqttHost'), c.host ?? '');
+      setInputValue(document.getElementById('mqttPort'), c.port ?? '');
+      setInputValue(document.getElementById('mqttUser'), c.username ?? '');
+      setInputValue(document.getElementById('mqttPass'), c.password ?? '');
+    }catch(e){
+      document.getElementById('mqttMsg').textContent = 'ERR: ' + (e?.message ?? e);
+    }
+  }
+
+  async function saveMqttConfig(ev){
+    const btn = ev?.currentTarget;
+    const msg = document.getElementById('mqttMsg');
+    if (msg) msg.textContent = '';
+    const body = {
+      host: document.getElementById('mqttHost').value.trim(),
+      port: Number(document.getElementById('mqttPort').value || 1883),
+      username: document.getElementById('mqttUser').value.trim(),
+      password: document.getElementById('mqttPass').value
+    };
+    try{
+      const r = await fetch('/config/mqtt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      clearDirty(document.getElementById('mqttHost'));
+      clearDirty(document.getElementById('mqttPort'));
+      clearDirty(document.getElementById('mqttUser'));
+      clearDirty(document.getElementById('mqttPass'));
+      flashButtonSuccess(btn);
+      return true;
+    }catch(e){
+      msg.textContent = 'ERR: ' + (e?.message ?? e);
+      return false;
+    }
+  }
+
+  function rowTemplateCoreApp(d){
+    const enabled = d?.enabled !== false;
+    const app = d?.app ?? '';
+    const name = d?.name ?? '';
+    const type = d?.type ?? 'lighting';
+    const appOptions = (() => {
+      const items = [];
+      for (let n = 48; n <= 95; n++) items.push(n);
+      items.push(228);
+      return items.map(n => `<option value="${n}" ${String(app) === String(n) ? 'selected' : ''}>${n}</option>`).join('');
+    })();
+    return `
+      <tr>
+        <td><input class="coreEnabled" type="checkbox" ${enabled ? 'checked' : ''} /></td>
+        <td>
+          <select class="coreType">
+            <option value="lighting" ${type === 'lighting' ? 'selected' : ''}>lighting</option>
+            <option value="measurement" ${type === 'measurement' ? 'selected' : ''}>measurement</option>
+          </select>
+        </td>
+        <td><select class="coreApp small">${appOptions}</select></td>
+        <td><input class="coreName" placeholder="Lighting" value="${name}" /></td>
+        <td><button class="coreDelBtn" type="button">Remove</button></td>
+      </tr>
+    `;
+  }
+  const coreAllowedApps = (() => {
+    const list = [];
+    for (let n = 48; n <= 95; n++) list.push(n);
+    list.push(228);
+    return list;
+  })();
+  let coreLastAddedApp = 47;
+
+  function getUsedCoreApps(exceptSel = null){
+    const used = new Set();
+    document.querySelectorAll('#coreAppBody .coreApp').forEach(sel => {
+      if (exceptSel && sel === exceptSel) return;
+      const n = Number(sel.value || 0);
+      if (coreAllowedApps.includes(n)) used.add(n);
+    });
+    return used;
+  }
+
+  function findNextCoreApp(startAfter, used){
+    if (!used) used = getUsedCoreApps();
+    if (used.size >= coreAllowedApps.length) return null;
+    let startIdx = coreAllowedApps.indexOf(Number(startAfter));
+    if (startIdx < 0) startIdx = -1;
+    for (let step = 1; step <= coreAllowedApps.length; step++){
+      const idx = (startIdx + step) % coreAllowedApps.length;
+      const app = coreAllowedApps[idx];
+      if (!used.has(app)) return app;
+    }
+    return null;
+  }
+
+  function syncCoreAppPrevValues(){
+    document.querySelectorAll('#coreAppBody .coreApp').forEach(sel => {
+      sel.dataset.prev = sel.value;
+    });
+  }
+
+  function refreshCoreAppChoices(){
+    const selects = Array.from(document.querySelectorAll('#coreAppBody .coreApp'));
+    selects.forEach(sel => {
+      const current = Number(sel.value || 0);
+      const usedElse = getUsedCoreApps(sel);
+      const opts = coreAllowedApps.filter(n => n === current || !usedElse.has(n));
+      sel.innerHTML = opts.map(n => `<option value="${n}">${n}</option>`).join('');
+      if (opts.includes(current)) sel.value = String(current);
+      else if (opts.length) sel.value = String(opts[0]);
+      else sel.value = '';
+      sel.dataset.prev = sel.value;
+    });
+  }
+
+  function syncCoreLastAddedApp(){
+    let bestIdx = -1;
+    let bestApp = 47;
+    document.querySelectorAll('#coreAppBody .coreApp').forEach(sel => {
+      const idx = coreAllowedApps.indexOf(Number(sel.value || 0));
+      if (idx > bestIdx){
+        bestIdx = idx;
+        bestApp = coreAllowedApps[idx];
+      }
+    });
+    coreLastAddedApp = bestApp;
+  }
+
+  async function loadCoreConfig(){
+    try{
+      const r = await fetch('/config/core', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const c = await r.json();
+      const body = document.getElementById('coreAppBody');
+      body.innerHTML = '';
+      const list = c.apps && c.apps.length ? c.apps : [];
+      if (!list.length){
+        body.insertAdjacentHTML('beforeend', rowTemplateCoreApp({ app:56, name:'Lighting', type:'lighting', enabled:true }));
+        body.insertAdjacentHTML('beforeend', rowTemplateCoreApp({ app:228, name:'Measurement', type:'measurement', enabled:true }));
+      } else {
+        for (const d of list) body.insertAdjacentHTML('beforeend', rowTemplateCoreApp(d));
+      }
+      refreshCoreAppChoices();
+      syncCoreAppPrevValues();
+      syncCoreLastAddedApp();
+      coreDirty = false;
+    }catch(e){
+      document.getElementById('coreMsg').textContent = 'ERR: ' + (e?.message ?? e);
+    }
+  }
+
+  async function saveCoreConfig(ev){
+    const btn = ev?.currentTarget;
+    const msg = document.getElementById('coreMsg');
+    if (msg) msg.textContent = '';
+    const apps = [];
+    const seen = new Set();
+    for (const sel of document.querySelectorAll('#coreAppBody .coreApp')){
+      const appNum = Number(sel.value || 0);
+      if (seen.has(appNum)){
+        msg.textContent = 'ERR: Duplicate app addresses are not allowed.';
+        return false;
+      }
+      seen.add(appNum);
+    }
+    document.querySelectorAll('#coreAppBody tr').forEach(tr => {
+      apps.push({
+        enabled: !!tr.querySelector('.coreEnabled')?.checked,
+        app: Number(tr.querySelector('.coreApp')?.value || 0),
+        name: tr.querySelector('.coreName')?.value?.trim() ?? '',
+        type: tr.querySelector('.coreType')?.value || 'lighting'
+      });
+    });
+    try{
+      const r = await fetch('/config/core', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apps })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      flashButtonSuccess(btn);
+      coreDirty = false;
+      return true;
+    }catch(e){
+      msg.textContent = 'ERR: ' + (e?.message ?? e);
+      return false;
+    }
+  }
+  // wire up UI (safe even if elements don't exist yet)
+  const timeBtn = document.getElementById('timeSaveBtn');
+  if (timeBtn) timeBtn.addEventListener('click', saveTimeConfig);
+  wireDirty('timeEnabled', 'change');
+  wireDirty('timeSendTime', 'change');
+  wireDirty('timeSendDate', 'change');
+  wireDirty('timeMode', 'change');
+  wireDirty('timeDaily');
+  wireDirty('timeInterval');
+  const timeNowBtn = document.getElementById('timeNowBtn');
+  if (timeNowBtn) timeNowBtn.addEventListener('click', async () => {
+    const msg = document.getElementById('timeMsg');
+    msg.textContent = 'Sending...';
+    try{
+      const r = await fetch('/control/time/now', { method: 'POST' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      flashSuccess(msg, 'Sent');
+    }catch(e){
+      msg.textContent = 'ERR: ' + (e?.message ?? e);
+    }
+  });
+  const mqttSaveBtn = document.getElementById('mqttSaveBtn');
+  if (mqttSaveBtn) mqttSaveBtn.addEventListener('click', saveMqttConfig);
+  const mqttPass = document.getElementById('mqttPass');
+  const mqttPassToggle = document.getElementById('mqttPassToggle');
+  if (mqttPass && mqttPassToggle) mqttPassToggle.addEventListener('click', () => {
+    const showPassword = mqttPass.type === 'password';
+    mqttPass.type = showPassword ? 'text' : 'password';
+    mqttPassToggle.setAttribute('aria-pressed', String(showPassword));
+    const label = showPassword ? 'Hide MQTT password' : 'Show MQTT password';
+    mqttPassToggle.setAttribute('aria-label', label);
+    mqttPassToggle.title = label;
+  });
+  wireDirty('mqttHost');
+  wireDirty('mqttPort');
+  wireDirty('mqttUser');
+  wireDirty('mqttPass');
+  const coreAddBtn = document.getElementById('coreAddBtn');
+  if (coreAddBtn) coreAddBtn.addEventListener('click', () => {
+    const msg = document.getElementById('coreMsg');
+    const used = getUsedCoreApps();
+    const nextApp = findNextCoreApp(coreLastAddedApp, used);
+    if (nextApp == null){
+      msg.textContent = 'No free app addresses available.';
+      return;
+    }
+    document.getElementById('coreAppBody').insertAdjacentHTML('beforeend', rowTemplateCoreApp({ app: nextApp }));
+    refreshCoreAppChoices();
+    syncCoreAppPrevValues();
+    coreLastAddedApp = nextApp;
+    coreDirty = true;
+    msg.textContent = '';
+  });
+  const coreSaveBtn = document.getElementById('coreSaveBtn');
+  if (coreSaveBtn) coreSaveBtn.addEventListener('click', saveCoreConfig);
+  const coreBody = document.getElementById('coreAppBody');
+  if (coreBody) coreBody.addEventListener('click', (e) => {
+    const delBtn = e.target.closest('.coreDelBtn');
+    if (delBtn){
+      const tr = delBtn.closest('tr');
+      if (tr) tr.remove();
+      refreshCoreAppChoices();
+      syncCoreLastAddedApp();
+      coreDirty = true;
+      return;
+    }
+  });
+  if (coreBody) coreBody.addEventListener('input', () => { coreDirty = true; });
+  if (coreBody) coreBody.addEventListener('change', (e) => {
+    const sel = e.target.closest('.coreApp');
+    if (!sel) return;
+    const msg = document.getElementById('coreMsg');
+    const selected = Number(sel.value || 0);
+    const usedElse = getUsedCoreApps(sel);
+    if (usedElse.has(selected)){
+      const prev = sel.dataset.prev;
+      if (prev !== undefined && prev !== null && prev !== '')
+        sel.value = prev;
+      msg.textContent = 'ERR: Duplicate app addresses are not allowed.';
+      return;
+    }
+    sel.dataset.prev = sel.value;
+    coreLastAddedApp = selected;
+    if (msg && (msg.textContent || '').startsWith('ERR: Duplicate app addresses'))
+      msg.textContent = '';
+    refreshCoreAppChoices();
+    coreDirty = true;
+  });
+
+  function setPill(el, ok, text){
+    if (!el) return;
+    el.classList.remove('ok','bad');
+    el.classList.add(ok ? 'ok' : 'bad');
+    el.textContent = text;
+  }
+
+  function setStatusPill(el, ok, text){
+    if (!el) return;
+    el.classList.remove('status-ok', 'status-bad');
+    el.classList.add(ok ? 'status-ok' : 'status-bad');
+    el.textContent = text;
+  }
+
+  function setText(id, value){
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = value ?? '';
+  }
+
+  function escHtml(s){
+    return (s ?? '').toString()
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'","&#39;");
+  }
+
+  function setHidden(id, hidden){
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('hidden', !!hidden);
+  }
+
+  function updateDiscoverButtons(){
+    const iface1Type = document.getElementById('iface1Type')?.value || 'sim';
+    const iface2Type = document.getElementById('iface2Type')?.value || 'pci';
+    setHidden('iface1DiscoverBtn', iface1Type !== 'cni');
+    setHidden('iface2DiscoverBtn', iface2Type !== 'cni');
+  }
+
+  function applyDiscoveredCni(target, device){
+    if (!device) return;
+    if (target === 1){
+      const ipInput = document.getElementById('serialDeviceInput');
+      const portInput = document.getElementById('iface1PortInput');
+      if (ipInput){
+        ipInput.value = device.ip || '';
+        markDirty(ipInput);
+      }
+      if (portInput){
+        portInput.value = String(device.tcpPort || 10001);
+        markDirty(portInput);
+      }
+      iface1Cfg.serialDevice = device.ip || iface1Cfg.serialDevice;
+      iface1Cfg.cniPort = Number(device.tcpPort || 10001);
+    } else {
+      const ipInput = document.getElementById('iface2DeviceInput');
+      const portInput = document.getElementById('iface2PortInput');
+      if (ipInput){
+        ipInput.value = device.ip || '';
+        markDirty(ipInput);
+      }
+      if (portInput){
+        portInput.value = String(device.tcpPort || 10001);
+        markDirty(portInput);
+      }
+      iface2Cfg.serialDevice = device.ip || iface2Cfg.serialDevice;
+      iface2Cfg.cniPort = Number(device.tcpPort || 10001);
+    }
+  }
+
+  function closeCniDiscoverDialog(){
+    const dlg = document.getElementById('cniDiscoverDialog');
+    if (dlg?.open) dlg.close();
+  }
+
+  function setCniDiscoverLoading(loading){
+    const indicator = document.getElementById('cniDiscoverIndicator');
+    const statusText = document.getElementById('cniDiscoverStatusText');
+    setHidden('cniDiscoverLoading', false);
+    setHidden('cniDiscoverResults', true);
+    const rescanBtn = document.getElementById('cniDiscoverRescanBtn');
+    const selectBtn = document.getElementById('cniDiscoverSelectBtn');
+    if (indicator){
+      indicator.className = loading ? 'cni-discovery-spinner' : 'cni-discovery-state';
+      indicator.innerHTML = '';
+    }
+    if (statusText) statusText.textContent = loading ? 'Searching for CNIs...' : '';
+    if (rescanBtn) rescanBtn.disabled = !!loading;
+    if (selectBtn) selectBtn.disabled = true;
+  }
+
+  function setCniDiscoverOutcome(kind, text){
+    const indicator = document.getElementById('cniDiscoverIndicator');
+    const statusText = document.getElementById('cniDiscoverStatusText');
+    if (indicator){
+      indicator.className = `cni-discovery-state ${kind === 'ok' ? 'ok' : 'bad'}`;
+      indicator.innerHTML = kind === 'ok' ? '&#10003;' : '&#10005;';
+    }
+    if (statusText) statusText.textContent = text;
+  }
+
+  function showCniDiscoverDialog(){
+    const dlg = document.getElementById('cniDiscoverDialog');
+    if (!dlg) return;
+    setCniDiscoverLoading(true);
+    if (dlg.open) return;
+    dlg.showModal();
+  }
+
+  function showCniDiscoverChoices(devices){
+    const body = document.getElementById('cniDiscoverBody');
+    const msg = document.getElementById('cniDiscoverMsg');
+    const selectBtn = document.getElementById('cniDiscoverSelectBtn');
+    if (!body || !msg) return;
+
+    if (!devices.length){
+      body.innerHTML = '';
+      body.dataset.devices = '[]';
+      msg.textContent = '';
+      setHidden('cniDiscoverResults', true);
+      if (selectBtn) selectBtn.disabled = true;
+      setCniDiscoverOutcome('bad', 'No CNIs found...');
+      return;
+    }
+
+    body.innerHTML = (devices || []).map((d, idx) => `
+      <tr>
+        <td><input type="radio" name="cniDiscoverPick" value="${idx}" ${idx === 0 ? 'checked' : ''} /></td>
+        <td>${escHtml(d.name || '')}</td>
+        <td>${escHtml(d.model || '')}</td>
+        <td>${escHtml(d.ip || '')}</td>
+        <td>${escHtml(d.tcpPort ?? '')}</td>
+        <td>${escHtml(d.mac || '')}</td>
+      </tr>
+    `).join('');
+    body.dataset.devices = JSON.stringify(devices || []);
+    msg.textContent = '';
+    setHidden('cniDiscoverResults', false);
+    setCniDiscoverOutcome('ok', 'Search Complete');
+    syncCniDiscoverSelectState();
+  }
+
+  function getSelectedCniDiscoverIndex(){
+    const choice = document.querySelector('input[name="cniDiscoverPick"]:checked');
+    const idx = Number(choice?.value ?? -1);
+    return Number.isInteger(idx) ? idx : -1;
+  }
+
+  async function runCniDiscover(){
+    let timeoutId = 0;
+    try{
+      const controller = new AbortController();
+      timeoutId = window.setTimeout(() => controller.abort(), 5000);
+      const r = await fetch('/api/cni/discover', { method: 'POST', signal: controller.signal });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j.ok === false) throw new Error(j.error || ('HTTP ' + r.status));
+      const devices = Array.isArray(j.devices) ? j.devices : [];
+      showCniDiscoverChoices(devices);
+    }catch(e){
+      const body = document.getElementById('cniDiscoverBody');
+      const msg = document.getElementById('cniDiscoverMsg');
+      if (body) body.innerHTML = '';
+      if (msg) msg.textContent = '';
+      setHidden('cniDiscoverResults', true);
+      if (e?.name === 'AbortError')
+        setCniDiscoverOutcome('bad', 'Search timed out');
+      else
+        setCniDiscoverOutcome('bad', 'Search failed');
+    } finally {
+      if (timeoutId) window.clearTimeout(timeoutId);
+    }
+  }
+
+  async function discoverCni(target){
+    cniDiscoverTarget = target;
+    showCniDiscoverDialog();
+    await runCniDiscover();
+  }
+
+  function selectCniFromDialog(){
+    const body = document.getElementById('cniDiscoverBody');
+    const devices = JSON.parse(body?.dataset.devices || '[]');
+    const idx = getSelectedCniDiscoverIndex();
+    if (!Number.isInteger(idx) || idx < 0 || idx >= devices.length) return;
+    applyDiscoveredCni(cniDiscoverTarget, devices[idx]);
+    closeCniDiscoverDialog();
+  }
+
+  function syncCniDiscoverSelectState(){
+    const selectBtn = document.getElementById('cniDiscoverSelectBtn');
+    if (selectBtn)
+      selectBtn.disabled = getSelectedCniDiscoverIndex() < 0;
+  }
+
+  function updateIface1ModeUi(mode){
+    const type = document.getElementById('iface1Type')?.value || 'sim';
+    const showPort = (type === 'cni') || (mode === 'interface');
+    const showHostPort = (type === 'cni') && (mode === 'interface');
+    setHidden('iface1PortWrapTop', !showPort);
+    setHidden('iface1HostPortWrapTop', type === 'cni' ? !showHostPort : mode !== 'interface');
+    const portLabel = document.getElementById('iface1PortLabel');
+    if (portLabel)
+    {
+      if (type === 'cni') portLabel.textContent = 'Port:';
+      else portLabel.textContent = mode === 'interface' ? 'Host Port:' : 'Port:';
+    }
+    const hostPortLabel = document.getElementById('iface1HostPortLabel');
+    if (hostPortLabel)
+      hostPortLabel.textContent = 'Host Port:';
+  }
+
+  function defaultDeviceForType(type){
+    if (type === 'sim') return '/dev/ttyAMA0';
+    if (type === 'pci') return '/dev/ttyUSB0';
+    if (type === 'cni') return '192.168.0.100';
+    return '';
+  }
+
+  function defaultHostPortForType(type, index){
+    if (type === 'cni') return 2000;
+    return index === 1 ? 10001 : 10002;
+  }
+
+  function applyInterfaceType(prefix, type){
+    const isSim = type === 'sim';
+    const simId = prefix === 'iface1' ? 'iface1SimWrap' : 'iface2SimWrap';
+    setHidden(simId, !isSim);
+  }
+
+  function updateIfaceSaveButtons(iface2Enabled){
+    const saveTop = document.getElementById('ifaceSaveBtn');
+    const saveBottom = document.getElementById('ifaceSaveBtn2');
+    if (saveTop) saveTop.style.display = 'inline-block';
+    if (saveBottom) saveBottom.style.display = 'none';
+  }
+
+  function updateIface1TypeUi(type){
+    const devLabel = document.getElementById('iface1DeviceLabel');
+    const portLabel = document.getElementById('iface1PortLabel');
+    const devInput = document.getElementById('serialDeviceInput');
+    const portInput = document.getElementById('iface1PortInput');
+    const hostPortInput = document.getElementById('iface1HostPortInput');
+    const modeSel = document.getElementById('modeSel');
+    const ifaceOpt = modeSel ? modeSel.querySelector('option[value="interface"]') : null;
+
+    if (type === 'cni'){
+      if (devLabel) devLabel.textContent = 'IP:';
+      if (portLabel) portLabel.textContent = 'Port:';
+      if (devInput) devInput.placeholder = defaultDeviceForType('cni');
+      if (portInput) portInput.placeholder = '10001';
+      if (hostPortInput) hostPortInput.placeholder = String(defaultHostPortForType('cni', 1));
+      if (ifaceOpt) ifaceOpt.disabled = false;
+    } else {
+      if (devLabel) devLabel.textContent = 'Device:';
+      if (portLabel) portLabel.textContent = modeSel?.value === 'interface' ? 'Host Port:' : 'Port:';
+      if (devInput) devInput.placeholder = defaultDeviceForType(type || 'pci');
+      if (portInput) portInput.placeholder = String(defaultHostPortForType(type || 'pci', 1));
+      if (hostPortInput) hostPortInput.placeholder = String(defaultHostPortForType(type || 'pci', 1));
+      if (ifaceOpt) ifaceOpt.disabled = false;
+    }
+    updateDiscoverButtons();
+  }
+
+  function updateIface2TypeUi(type){
+    const devLabel = document.getElementById('iface2DeviceLabel');
+    const portLabel = document.getElementById('iface2PortLabel');
+    const devInput = document.getElementById('iface2DeviceInput');
+    const portInput = document.getElementById('iface2PortInput');
+    const hostPortInput = document.getElementById('iface2HostPortInput');
+
+    if (type === 'cni'){
+      if (devLabel) devLabel.textContent = 'IP:';
+      if (portLabel) portLabel.textContent = 'Port:';
+      if (devInput) devInput.placeholder = defaultDeviceForType('cni');
+      if (portInput) portInput.placeholder = '10001';
+      if (hostPortInput) hostPortInput.placeholder = String(defaultHostPortForType('cni', 2));
+      setHidden('iface2HostPortWrapTop', false);
+    } else {
+      if (devLabel) devLabel.textContent = 'Device:';
+      if (portLabel) portLabel.textContent = 'Host Port:';
+      if (devInput) devInput.placeholder = defaultDeviceForType(type || 'pci');
+      if (portInput) portInput.placeholder = String(defaultHostPortForType(type || 'pci', 2));
+      if (hostPortInput) hostPortInput.placeholder = String(defaultHostPortForType(type || 'pci', 2));
+      setHidden('iface2HostPortWrapTop', true);
+    }
+    updateDiscoverButtons();
+  }
+
+  async function loadInterfaces(){
+    try{
+      const r = await fetch('/config/interfaces', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const cfg = await r.json();
+      const i1 = (cfg.interfaces || []).find(x => x.index === 1) || {};
+      const i2 = (cfg.interfaces || []).find(x => x.index === 2) || {};
+
+      iface1Cfg.tcpListenAddress = i1.tcpListenAddress || '0.0.0.0';
+      iface1Cfg.tcpListenPort = i1.tcpListenPort || defaultHostPortForType(i1.type || 'pci', 1);
+      iface1Cfg.cniPort = i1.cniPort || 10001;
+      iface1Cfg.serialDevice = (i1.serialDevice || '').trim();
+      iface2Cfg.tcpListenAddress = i2.tcpListenAddress || '0.0.0.0';
+      iface2Cfg.tcpListenPort = i2.tcpListenPort || defaultHostPortForType(i2.type || 'pci', 2);
+      iface2Cfg.cniPort = i2.cniPort || 10001;
+      iface2Cfg.serialDevice = (i2.serialDevice || '').trim();
+      iface2Cfg.enabled = false;
+
+      const t1 = document.getElementById('iface1Type');
+      const i1Type = (i1.type === 'sim' || i1.type === 'pci' || i1.type === 'cni') ? i1.type : 'sim';
+      setSelectValue(t1, i1Type);
+      iface1LastType = i1Type;
+      const t2 = document.getElementById('iface2Type');
+      const i2Type = (i2.type === 'sim' || i2.type === 'pci' || i2.type === 'cni') ? i2.type : 'pci';
+      setSelectValue(t2, i2Type);
+      iface2LastType = i2Type;
+
+      const d1 = document.getElementById('serialDeviceInput');
+      if (!iface1Cfg.serialDevice) iface1Cfg.serialDevice = defaultDeviceForType(i1Type);
+      setInputValue(d1, iface1Cfg.serialDevice);
+      const d2 = document.getElementById('iface2DeviceInput');
+      if (!iface2Cfg.serialDevice) iface2Cfg.serialDevice = defaultDeviceForType(i2Type);
+      setInputValue(d2, iface2Cfg.serialDevice);
+
+      const p1 = document.getElementById('iface1PortInput');
+      if (i1Type === 'cni')
+        setInputValue(p1, i1.cniPort ?? 10001);
+      else
+        setInputValue(p1, i1.tcpListenPort ?? defaultHostPortForType(i1Type, 1));
+      const p1h = document.getElementById('iface1HostPortInput');
+      setInputValue(p1h, i1.tcpListenPort ?? defaultHostPortForType(i1Type, 1));
+      const p2 = document.getElementById('iface2PortInput');
+      if (i2Type === 'cni')
+        setInputValue(p2, i2.cniPort ?? 10001);
+      else
+        setInputValue(p2, i2.tcpListenPort ?? defaultHostPortForType(i2Type, 2));
+      const p2h = document.getElementById('iface2HostPortInput');
+      setInputValue(p2h, i2.tcpListenPort ?? defaultHostPortForType(i2Type, 2));
+
+      const iface2Card = document.getElementById('iface2Card');
+      if (iface2Card) iface2Card.style.display = 'none';
+      updateIfaceSaveButtons(iface2Cfg.enabled);
+
+      applyInterfaceType('iface1', i1Type);
+      updateIface1TypeUi(i1Type);
+      updateIface1ModeUi(document.getElementById('modeSel')?.value || 'control');
+      applyInterfaceType('iface2', i2Type);
+      updateIface2TypeUi(i2Type);
+    }catch(e){
+      // ignore
+    }
+  }
+
+  async function saveInterfaces(){
+    const mode = document.getElementById('modeSel')?.value || 'control';
+    let i1Type = 'sim';
+    const i2Type = document.getElementById('iface2Type')?.value || 'pci';
+    const i1DevInput = document.getElementById('serialDeviceInput')?.value?.trim() || '';
+    const i1PortInput = parseInt(document.getElementById('iface1PortInput')?.value || '') || 0;
+    const i1HostPortInput = parseInt(document.getElementById('iface1HostPortInput')?.value || '') || 0;
+    const i2PortInput = parseInt(document.getElementById('iface2PortInput')?.value || '') || 0;
+    const i2HostPortInput = parseInt(document.getElementById('iface2HostPortInput')?.value || '') || 0;
+
+    let i1CniPort = iface1Cfg.cniPort || 10001;
+    let i1TcpListenPort = iface1Cfg.tcpListenPort || defaultHostPortForType(i1Type, 1);
+    if (i1Type === 'cni')
+    {
+      i1CniPort = i1PortInput || i1CniPort || 10001;
+      if (mode === 'interface')
+        i1TcpListenPort = i1HostPortInput || i1TcpListenPort || defaultHostPortForType('cni', 1);
+    }
+    else if (mode === 'interface')
+    {
+      i1TcpListenPort = i1HostPortInput || i1TcpListenPort || defaultHostPortForType(i1Type, 1);
+    }
+
+    let i2CniPort = iface2Cfg.cniPort || 10001;
+    let i2TcpListenPort = iface2Cfg.tcpListenPort || defaultHostPortForType(i2Type, 2);
+    if (i2Type === 'cni')
+    {
+      i2CniPort = i2PortInput || i2CniPort || 10001;
+      i2TcpListenPort = i2HostPortInput || i2TcpListenPort || defaultHostPortForType('cni', 2);
+    }
+    else
+    {
+      i2TcpListenPort = i2PortInput || i2TcpListenPort || defaultHostPortForType(i2Type, 2);
+    }
+
+    const i1 = {
+      index: 1,
+      enabled: true,
+      type: i1Type,
+      serialDevice: i1DevInput || defaultDeviceForType(i1Type),
+      tcpListenAddress: iface1Cfg.tcpListenAddress,
+      tcpListenPort: i1TcpListenPort,
+      cniPort: i1CniPort
+    };
+    const i2 = {
+      index: 2,
+      enabled: !!iface2Cfg.enabled,
+      type: i2Type,
+      serialDevice: (document.getElementById('iface2DeviceInput')?.value?.trim() || defaultDeviceForType(i2Type)),
+      tcpListenAddress: iface2Cfg.tcpListenAddress,
+      tcpListenPort: i2TcpListenPort,
+      cniPort: i2CniPort
+    };
+    iface1Cfg.serialDevice = i1.serialDevice;
+    iface1Cfg.cniPort = i1CniPort;
+    iface1Cfg.tcpListenPort = i1TcpListenPort;
+    iface2Cfg.serialDevice = i2.serialDevice;
+    iface2Cfg.cniPort = i2CniPort;
+    iface2Cfg.tcpListenPort = i2TcpListenPort;
+    await fetch('/config/interfaces', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interfaces: [i1, i2] })
+    });
+    clearDirty(document.getElementById('iface1Type'));
+    clearDirty(document.getElementById('serialDeviceInput'));
+    clearDirty(document.getElementById('iface1PortInput'));
+    clearDirty(document.getElementById('iface1HostPortInput'));
+    clearDirty(document.getElementById('iface2Type'));
+    clearDirty(document.getElementById('iface2DeviceInput'));
+    clearDirty(document.getElementById('iface2PortInput'));
+    clearDirty(document.getElementById('iface2HostPortInput'));
+  }
+
+  function renderLog(el, arr){
+    if (!el) return; // <- important: don't crash UI
+
+    if (!arr || !arr.length){
+      el.innerHTML = '<div class="line">(no data)</div>';
+      return;
+    }
+    el.innerHTML = arr.map(x => `<div class="line">${escHtml(x)}</div>`).join('');
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function renderState(el, s){
+    if (!el) return;
+    if (!s || (!s.apps || !s.apps.length) && (!s.measurement || !s.measurement.length)){
+      el.innerHTML = '<div class="line">(no state)</div>';
+      return;
+    }
+
+    let out = '';
+    if (s.apps && s.apps.length){
+      for (const app of s.apps){
+        const label = app.name ? `${app.app} (${app.name})` : `${app.app}`;
+        out += `<div class="line"><b>App ${escHtml(label)}</b></div>`;
+        if (!app.groups || !app.groups.length){
+          out += `<div class="line">(no groups)</div>`;
+          continue;
+        }
+        for (const g of app.groups){
+          const ga = String(g.ga).padStart(3,'0');
+          const st = g.state ?? '-';
+          const lv = (g.level ?? '').toString();
+          out += `<div class="line">GA=${ga}  ${escHtml(st)}  LV=${escHtml(lv)}</div>`;
+        }
+      }
+    }
+
+    if (s.measurement && s.measurement.length){
+      const mk = s.measurementAppKey || '';
+      const mn = s.measurementAppName || s.measurementLabel || '';
+      const mTitle = mk ? `App ${mk}${mn ? ' (' + mn + ')' : ''}` : (mn || 'Measurement');
+      out += `<div class="line"><b>${escHtml(mTitle)}</b></div>`;
+      for (const row of s.measurement){
+        const dev = String(row.deviceId).padStart(3,'0');
+        if (!row.channels || !row.channels.length){
+          out += `<div class="line">UNIT=${dev} (no channels)</div>`;
+          continue;
+        }
+        for (const ch of row.channels){
+          const unit = (ch.unitSymbol || '').toString();
+          const suffix = unit ? ` ${unit}` : '';
+          const num = Number(ch.value ?? 0);
+          const v = Number.isFinite(num) ? num.toFixed(3) : (ch.value ?? '').toString();
+          out += `<div class="line">UNIT=${dev}  CH=${String(ch.channelId).padStart(2,'0')}  VAL=${escHtml(v)}${escHtml(suffix)}</div>`;
+        }
+      }
+    }
+
+    const prevScrollHeight = el.scrollHeight;
+    const prevTop = el.scrollTop;
+    const prevBottom = prevScrollHeight - prevTop - el.clientHeight;
+
+    el.innerHTML = out;
+
+    if (prevBottom <= 8) {
+      el.scrollTop = el.scrollHeight;
+    } else {
+      const newTop = el.scrollHeight - el.clientHeight - prevBottom;
+      el.scrollTop = Math.max(0, newTop);
+    }
+  }
+
+  async function refreshState(){
+    const el = document.getElementById('stateView');
+    if (!el) return;
+
+    try{
+      const r = await fetch('/control/state', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const s = await r.json();
+      renderState(el, s);
+    }catch(e){
+      el.innerHTML = '<div class="line">ERR: ' + escHtml(e?.message ?? e) + '</div>';
+    }
+  }
+
+  async function tick(){
+    try{
+      const r = await fetch('/api/stats', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const s = await r.json();
+      const licence = s.licence || {};
+      const licenceWarning = document.getElementById('licenceWarning');
+      if (licenceWarning) {
+        if (licence.isValid) {
+          licenceWarning.classList.add('hidden');
+        } else {
+          licenceWarning.textContent = 'Failure: Licence key is invalid.';
+          licenceWarning.classList.remove('hidden');
+        }
+      }
+
+      const ifaceType = (s.interface1Type || '').toLowerCase();
+      const serialLabel = ifaceType === 'cni' ? 'TCP' : 'Serial';
+      setStatusPill(document.getElementById('statusSerial'), !!s.serialOpen, serialLabel + ': ' + (s.serialOpen ? 'Open' : 'Closed'));
+      const simVisible = ifaceType === 'sim';
+      setHidden('statusSim', !simVisible);
+      if (simVisible)
+        setStatusPill(document.getElementById('statusSim'), !!s.simOn, 'SIM: ' + (s.simOn ? 'On' : 'Off'));
+      setStatusPill(document.getElementById('statusMqtt'), !!s.mqttConnected, 'MQTT: ' + (s.mqttConnected ? 'Connected' : 'Disconnected'));
+      const serialOpen = !!s.serialOpen;
+      const rawV = s.cbusVoltage;
+      const hasV = serialOpen && rawV !== null && rawV !== undefined && rawV !== '' && Number.isFinite(Number(rawV));
+      const v = hasV ? Number(rawV) : NaN;
+      const vText = serialOpen ? (hasV ? (v.toFixed(1) + 'V') : 'N/A') : 'N/A';
+      setStatusPill(document.getElementById('statusVoltage'), hasV && v > 20.0, 'C-Bus Voltage: ' + vText);
+      setHidden('statusVoltage', (s.mode || '').toLowerCase() === 'interface');
+
+      const devInput = document.getElementById('serialDeviceInput');
+      setInputValue(devInput, iface1Cfg.serialDevice || defaultDeviceForType(document.getElementById('iface1Type')?.value || 'sim'));
+      const tcpBindEl = document.getElementById('tcpBind');
+      if (tcpBindEl) tcpBindEl.textContent = (s.tcpBind ?? '-') + ':' + (s.tcpPort ?? '-');
+      const statsPort = document.getElementById('statsPort');
+      if (statsPort) statsPort.textContent = (s.tcpPort ?? '-');
+      const statsMode = document.getElementById('statsMode');
+      if (statsMode) statsMode.textContent = (s.mode ?? '-');
+      const statsPortWrap = document.getElementById('statsPortWrap');
+      if (statsPortWrap) statsPortWrap.style.display = (s.mode === 'control') ? 'none' : 'inline-flex';
+
+      setText('clientRemote', s.clientRemote ?? '-');
+      setText('clientSince', s.clientConnectedAtLocal ?? '-');
+
+      setText('bST', fmtNum(s.bytesSerialToTcp));
+      setText('bTS', fmtNum(s.bytesTcpToSerial));
+
+      setText('lastSRx', s.lastSerialRxAtLocal ?? '-');
+      setText('lastTRx', s.lastTcpRxAtLocal ?? '-');
+
+      setText('uptime', s.uptimeHuman ?? '-');
+      setText('lastErr', s.lastError ?? '-');
+      if (s.coreRunning === false) {
+        setText('lastErr', 'Core not running');
+      }
+
+      // Interface2
+      const s2 = s.interface2 || {};
+      const iface2TcpBind = document.getElementById('iface2TcpBind');
+      if (iface2TcpBind) iface2TcpBind.textContent = (s2.tcpBind ?? '-') + ':' + (s2.tcpPort ?? '-');
+      const dev2 = document.getElementById('iface2DeviceInput');
+      setInputValue(dev2, iface2Cfg.serialDevice || defaultDeviceForType(document.getElementById('iface2Type')?.value || 'pci'));
+      setText('iface2ClientRemote', s2.clientRemote ?? '-');
+      setText('iface2ClientSince', s2.clientConnectedAtLocal ?? '-');
+      setText('iface2bST', fmtNum(s2.bytesSerialToTcp));
+      setText('iface2bTS', fmtNum(s2.bytesTcpToSerial));
+      setText('iface2LastSRx', s2.lastSerialRxAtLocal ?? '-');
+      setText('iface2LastTRx', s2.lastTcpRxAtLocal ?? '-');
+      setText('iface2LastErr', s2.lastError ?? '-');
+      const iface2Type = (((s2.type || '') || document.getElementById('iface2Type')?.value || 'pci')).toLowerCase();
+      const iface2Label = iface2Type === 'cni' ? 'TCP' : 'Serial';
+      setStatusPill(document.getElementById('statusSerial2'), !!s2.serialOpen, iface2Label + ': ' + (s2.serialOpen ? 'Open' : 'Closed'));
+      const sim2Visible = iface2Type === 'sim';
+      setHidden('statusSim2', !sim2Visible);
+      if (sim2Visible)
+        setStatusPill(document.getElementById('statusSim2'), !!s2.simOn, 'SIM: ' + (s2.simOn ? 'On' : 'Off'));
+
+      // Mode
+      const sel = document.getElementById('modeSel');
+      if (sel && s.mode) setSelectValue(sel, s.mode);
+      updateIface1TypeUi(document.getElementById('iface1Type')?.value || 'sim');
+      updateIface1ModeUi(sel ? sel.value : (s.mode || 'interface'));
+      updateBytesLabels(s);
+
+    } catch(e){
+      document.getElementById('lastErr').textContent = 'UI fetch error: ' + (e?.message ?? e);
+    }
+  }
+
+  function setLabel(id, value){
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  function updateBytesLabels(state){
+    const mode = (state.mode || '').toLowerCase();
+    const type1 = (state.interface1Type || '').toLowerCase();
+
+    if (mode === 'control')
+    {
+      if (type1 === 'cni')
+      {
+        setLabel('bytesLabelA', 'TCP RX');
+        setLabel('bytesLabelB', 'TCP TX');
+        setLabel('lastRxLabelA', 'TCP');
+        setLabel('lastRxLabelB', 'TCP');
+      }
+      else
+      {
+        setLabel('bytesLabelA', 'Serial RX');
+        setLabel('bytesLabelB', 'Serial TX');
+        setLabel('lastRxLabelA', 'Serial');
+        setLabel('lastRxLabelB', 'Serial');
+      }
+    }
+    else
+    {
+      if (type1 === 'cni')
+      {
+        setLabel('bytesLabelA', 'CNI→Host');
+        setLabel('bytesLabelB', 'Host→CNI');
+        setLabel('lastRxLabelA', 'CNI');
+        setLabel('lastRxLabelB', 'Host');
+      }
+      else
+      {
+        setLabel('bytesLabelA', 'Serial→TCP');
+        setLabel('bytesLabelB', 'TCP→Serial');
+        setLabel('lastRxLabelA', 'Serial');
+        setLabel('lastRxLabelB', 'TCP');
+      }
+    }
+
+    const type2 = (((state.interface2 || {}).type || '') || 'pci').toLowerCase();
+    if (type2 === 'cni')
+    {
+      setLabel('iface2BytesLabelA', 'CNI→Host');
+      setLabel('iface2BytesLabelB', 'Host→CNI');
+      setLabel('iface2LastRxLabelA', 'CNI');
+      setLabel('iface2LastRxLabelB', 'Host');
+    }
+    else
+    {
+      setLabel('iface2BytesLabelA', 'Serial→TCP');
+      setLabel('iface2BytesLabelB', 'TCP→Serial');
+      setLabel('iface2LastRxLabelA', 'Serial');
+      setLabel('iface2LastRxLabelB', 'TCP');
+    }
+  }
+
+  async function postCmd(path, msgEl){
+    if (msgEl) msgEl.textContent = '...';
+    try{
+      const r = await fetch(path, { method: 'POST' });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j.ok === false) throw new Error(j.error || ('HTTP ' + r.status));
+      if (msgEl) flashSuccess(msgEl, 'OK');
+    }catch(e){
+      if (msgEl) msgEl.textContent = 'ERR: ' + (e?.message ?? e);
+    }
+  }
+
+
+  document.getElementById('modeSel').addEventListener('change', (e) => {
+    updateIface1ModeUi(e.target.value);
+  });
+
+  // Port + SIM controls
+  document.getElementById('portEnableBtn').addEventListener('click', () =>
+    postCmd('/control/port/enable', document.getElementById('portMsg'))
+  );
+  document.getElementById('portDisableBtn').addEventListener('click', () =>
+    postCmd('/control/port/disable', document.getElementById('portMsg'))
+  );
+  document.getElementById('portResetBtn').addEventListener('click', () =>
+    postCmd('/control/reset', document.getElementById('portMsg'))
+  );
+  document.getElementById('simOnBtn').addEventListener('click', () =>
+    postCmd('/control/sim/on', document.getElementById('simMsg'))
+  );
+  document.getElementById('simOffBtn').addEventListener('click', () =>
+    postCmd('/control/sim/off', document.getElementById('simMsg'))
+  );
+  document.getElementById('port2EnableBtn').addEventListener('click', () =>
+    postCmd('/control2/port/enable', document.getElementById('port2Msg'))
+  );
+  document.getElementById('port2DisableBtn').addEventListener('click', () =>
+    postCmd('/control2/port/disable', document.getElementById('port2Msg'))
+  );
+  document.getElementById('port2ResetBtn').addEventListener('click', () =>
+    postCmd('/control2/reset', document.getElementById('port2Msg'))
+  );
+  document.getElementById('sim2OnBtn').addEventListener('click', () =>
+    postCmd('/control2/sim/on', document.getElementById('sim2Msg'))
+  );
+  document.getElementById('sim2OffBtn').addEventListener('click', () =>
+    postCmd('/control2/sim/off', document.getElementById('sim2Msg'))
+  );
+  document.getElementById('iface1DiscoverBtn').addEventListener('click', () => discoverCni(1));
+  document.getElementById('iface2DiscoverBtn').addEventListener('click', () => discoverCni(2));
+  document.getElementById('cniDiscoverCancelBtn').addEventListener('click', closeCniDiscoverDialog);
+  document.getElementById('cniDiscoverRescanBtn').addEventListener('click', async () => {
+    setCniDiscoverLoading(true);
+    await runCniDiscover();
+  });
+  document.getElementById('cniDiscoverSelectBtn').addEventListener('click', selectCniFromDialog);
+  document.getElementById('cniDiscoverBody').addEventListener('change', (e) => {
+    if (!e.target.matches('input[name="cniDiscoverPick"]')) return;
+    syncCniDiscoverSelectState();
+  });
+
+  document.getElementById('iface2Type').addEventListener('change', (e) => {
+    const type = e.target.value;
+    const prevType = iface2LastType;
+    iface2LastType = type;
+    iface2Cfg.serialDevice = defaultDeviceForType(type);
+    const dev = document.getElementById('iface2DeviceInput');
+    if (dev) {
+      dev.value = iface2Cfg.serialDevice;
+      clearDirty(dev);
+    }
+    const port = document.getElementById('iface2PortInput');
+    const hostPort = document.getElementById('iface2HostPortInput');
+    if (type === 'cni') {
+      if (prevType !== 'cni')
+        iface2Cfg.tcpListenPort = defaultHostPortForType('cni', 2);
+      if (port) { port.value = String(iface2Cfg.cniPort || 10001); clearDirty(port); }
+      if (hostPort) { hostPort.value = String(iface2Cfg.tcpListenPort || defaultHostPortForType('cni', 2)); clearDirty(hostPort); }
+    } else {
+      if (prevType === 'cni')
+        iface2Cfg.tcpListenPort = defaultHostPortForType(type, 2);
+      if (port) { port.value = String(iface2Cfg.tcpListenPort || defaultHostPortForType(type, 2)); clearDirty(port); }
+      if (hostPort) { hostPort.value = String(iface2Cfg.tcpListenPort || defaultHostPortForType(type, 2)); clearDirty(hostPort); }
+    }
+    applyInterfaceType('iface2', e.target.value);
+    updateIface2TypeUi(e.target.value);
+  });
+
+  async function saveModeAndInterfaces(ev){
+    const btn = ev?.currentTarget;
+    const msg = document.getElementById('modeMsg');
+    msg.textContent = '';
+    const mode = document.getElementById('modeSel').value;
+    try{
+      const r = await fetch('/config/mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+      clearDirty(document.getElementById('modeSel'));
+      await saveInterfaces();
+      if (mode === 'control'){
+        try { await fetch('/control/port/enable', { method: 'POST' }); } catch { }
+      }
+      flashButtonSuccess(btn);
+      return true;
+    } catch(e){
+      msg.textContent = 'Error: ' + (e?.message ?? e);
+      return false;
+    }
+  }
+
+  document.getElementById('ifaceSaveBtn').addEventListener('click', saveModeAndInterfaces);
+  document.getElementById('ifaceSaveBtn2').addEventListener('click', saveModeAndInterfaces);
+  wireDirty('serialDeviceInput');
+  wireDirty('iface1PortInput');
+  wireDirty('iface1HostPortInput');
+  wireDirty('modeSel', 'change');
+  wireDirty('iface2Type', 'change');
+  wireDirty('iface2DeviceInput');
+  wireDirty('iface2PortInput');
+  wireDirty('iface2HostPortInput');
+
+  document.getElementById('iface2DisableBtn').addEventListener('click', () => {
+    iface2Cfg.enabled = false;
+    const iface2Card = document.getElementById('iface2Card');
+    if (iface2Card) iface2Card.style.display = 'none';
+    updateIfaceSaveButtons(false);
+    markDirty(document.getElementById('iface2Type'));
+  });
+
+  async function saveAllDirtyConfig(){
+    if ((isDirty('serialDeviceInput') || isDirty('iface1PortInput') || isDirty('iface1HostPortInput') || isDirty('modeSel'))){
+      const ok = await saveModeAndInterfaces({ currentTarget: document.getElementById('unsavedSaveBtn') });
+      if (!ok) return false;
+    }
+    if (isDirty('mqttHost') || isDirty('mqttPort') || isDirty('mqttUser') || isDirty('mqttPass')){
+      const ok = await saveMqttConfig({ currentTarget: document.getElementById('unsavedSaveBtn') });
+      if (!ok) return false;
+    }
+    if (isDirty('timeEnabled') || isDirty('timeSendTime') || isDirty('timeSendDate') || isDirty('timeMode') || isDirty('timeDaily') || isDirty('timeInterval')){
+      const ok = await saveTimeConfig({ currentTarget: document.getElementById('unsavedSaveBtn') });
+      if (!ok) return false;
+    }
+    if (coreDirty){
+      const ok = await saveCoreConfig({ currentTarget: document.getElementById('unsavedSaveBtn') });
+      if (!ok) return false;
+    }
+    return true;
+  }
+
+  document.getElementById('unsavedCancelBtn').addEventListener('click', closeUnsavedDialog);
+  document.getElementById('unsavedContinueBtn').addEventListener('click', () => {
+    const href = pendingNavHref;
+    closeUnsavedDialog();
+    if (href) window.location.href = href;
+  });
+  document.getElementById('unsavedSaveBtn').addEventListener('click', async () => {
+    const href = pendingNavHref;
+    const ok = await saveAllDirtyConfig();
+    if (!ok) return;
+    closeUnsavedDialog();
+    if (href) window.location.href = href;
+  });
+
+  document.querySelectorAll('.nav .navBtn').forEach(a => {
+    const href = a.getAttribute('href') || '';
+    if (!href || href === window.location.pathname) return;
+    a.addEventListener('click', (e) => {
+      if (!hasUnsavedConfig()) return;
+      e.preventDefault();
+      openUnsavedDialog(a.href);
+    });
+  });
+
+  loadTimeConfig();
+  loadMqttConfig();
+  loadCoreConfig();
+  loadInterfaces();
+  tick();
+  setInterval(tick, REFRESH_MS);
+})();
+</script>
+
+</body>
+</html>
