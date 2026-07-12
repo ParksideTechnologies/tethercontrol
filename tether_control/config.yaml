@@ -1,5 +1,5 @@
 name: "Tether Control"
-version: "2.0.0"
+version: "2.0.1"
 slug: "tether_control"
 description: "Tether Control for Home Assistant."
 url: "https://github.com/ParksideTechnologies/tethercontrol"

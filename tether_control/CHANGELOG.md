@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.1 - 2026-07-12
+- Updated the Tether Control app icon.
+- Fixed the Licence Key field label and description in the Home Assistant add-on configuration page.
+- Fixed the licence warning display on the C-Bus Group Setup and Help pages.
+- Improved licence status logging.
+
 ## 2.0.0 - 2026-07-11
 - Changed Home Assistant MQTT discovery so entities are grouped under a single Tether Control device.
 - Added diagnostic Home Assistant entities for Tether Control status.
