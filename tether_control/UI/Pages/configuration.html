@@ -105,6 +105,35 @@
     button:hover { background: #d8ecfb; border-color: var(--accent); }
     button:active { transform: translateY(1px); }
     button.btn-flash-ok { background: var(--ok-bg); border-color: var(--ok-line); color: #1f5e33; }
+    .config-toggle {
+      width: 46px;
+      height: 26px;
+      padding: 0;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      border: 1px solid #bdcddd;
+      background: linear-gradient(180deg, #f4f8fb, #dfeaf2);
+      box-shadow: inset 0 1px 2px rgba(23, 50, 71, 0.1);
+      transition: background-color 0.18s ease, border-color 0.18s ease;
+    }
+    .config-toggle.is-on {
+      background: linear-gradient(180deg, #8bd49c, #67be7e);
+      border-color: #4e9f65;
+    }
+    .config-toggle .toggle-thumb {
+      width: 20px;
+      height: 20px;
+      margin-left: 2px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #ffffff, #eaf2f8);
+      border: 1px solid rgba(111, 139, 160, 0.45);
+      box-shadow: 0 1px 2px rgba(23, 50, 71, 0.22);
+      transition: transform 0.18s ease;
+      pointer-events: none;
+    }
+    .config-toggle.is-on .toggle-thumb { transform: translateX(20px); }
     .banner {
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
       color:#fff;
@@ -218,7 +247,7 @@
       <p style="margin:0 0 8px 0;"><b>Status</b></p>
       <div class="row">
         <span id="statusSerial" class="status-pill status-bad">Serial: Closed</span>
-        <span id="statusSim" class="status-pill status-bad">SIM: Off</span>
+        <span id="statusSim" class="status-pill status-bad">C-Bus Link: Off</span>
         <span id="statusVoltage" class="status-pill status-bad">C-Bus Voltage: --.-V</span>
       </div>
     </div>
@@ -231,17 +260,20 @@
       <p><b>Last error:</b> <span id="lastErr">-</span></p>
       <div class="row" style="margin-top:8px; justify-content: space-between;">
         <span class="pill" id="iface1PortWrap">
-          Port:
-          <button id="portEnableBtn" type="button">Enable</button>
-          <button id="portDisableBtn" type="button">Disable</button>
+          Serial Port:
+          <button id="portToggleBtn" class="config-toggle" type="button" aria-pressed="false" title="Toggle serial port"><span class="toggle-thumb"></span></button>
           <button id="portResetBtn" type="button">Reset</button>
           <span class="muted" id="portMsg"></span>
         </span>
         <span class="pill" id="iface1SimWrap">
-          SIM:
-          <button id="simOnBtn" type="button">On</button>
-          <button id="simOffBtn" type="button">Off</button>
+          C-Bus Link:
+          <button id="simToggleBtn" class="config-toggle" type="button" aria-pressed="false" title="Toggle C-Bus link"><span class="toggle-thumb"></span></button>
           <span class="muted" id="simMsg"></span>
+        </span>
+        <span class="pill hidden" id="hardwareBurdenWrap">
+          Hardware Burden:
+          <button id="hardwareBurdenToggleBtn" class="config-toggle" type="button" aria-pressed="false" title="Toggle hardware burden"><span class="toggle-thumb"></span></button>
+          <span class="muted" id="hardwareBurdenMsg"></span>
         </span>
         <span style="flex:1;"></span>
         <span style="display:flex; gap:8px; align-items:center;">
@@ -283,7 +315,7 @@
       <p style="margin:0 0 8px 0;"><b>Status</b></p>
       <div class="row">
         <span id="statusSerial2" class="status-pill status-bad">Serial: Closed</span>
-        <span id="statusSim2" class="status-pill status-bad hidden">SIM: Off</span>
+        <span id="statusSim2" class="status-pill status-bad hidden">C-Bus Link: Off</span>
       </div>
     </div>
 
@@ -294,16 +326,14 @@
       <p><b>Last error:</b> <span id="iface2LastErr">-</span></p>
       <div class="row" style="margin-top:8px; justify-content: space-between;">
         <span class="pill" id="iface2PortWrap">
-          Port:
-          <button id="port2EnableBtn" type="button">Enable</button>
-          <button id="port2DisableBtn" type="button">Disable</button>
+          Serial Port:
+          <button id="port2ToggleBtn" class="config-toggle" type="button" aria-pressed="false" title="Toggle serial port"><span class="toggle-thumb"></span></button>
           <button id="port2ResetBtn" type="button">Reset</button>
           <span class="muted" id="port2Msg"></span>
         </span>
         <span class="pill" id="iface2SimWrap">
-          SIM:
-          <button id="sim2OnBtn" type="button">On</button>
-          <button id="sim2OffBtn" type="button">Off</button>
+          C-Bus Link:
+          <button id="sim2ToggleBtn" class="config-toggle" type="button" aria-pressed="false" title="Toggle C-Bus link"><span class="toggle-thumb"></span></button>
           <span class="muted" id="sim2Msg"></span>
         </span>
         <span style="flex:1;"></span>
@@ -582,6 +612,13 @@
         btn.classList.remove('btn-flash-ok');
       }
     }, ms);
+  }
+
+  function setConfigToggle(btn, isOn, disabled = false){
+    if (!btn) return;
+    btn.classList.toggle('is-on', !!isOn);
+    btn.setAttribute('aria-pressed', String(!!isOn));
+    btn.disabled = !!disabled;
   }
 
   async function loadTimeConfig(){
@@ -1439,18 +1476,25 @@
         if (licence.isValid) {
           licenceWarning.classList.add('hidden');
         } else {
-          licenceWarning.textContent = 'Failure: Licence key is invalid.';
+          licenceWarning.textContent = 'Failure: ' + (licence.message || 'Licence key is invalid.');
           licenceWarning.classList.remove('hidden');
         }
       }
 
       const ifaceType = (s.interface1Type || '').toLowerCase();
-      const serialLabel = ifaceType === 'cni' ? 'TCP' : 'Serial';
+      const serialLabel = ifaceType === 'cni' ? 'TCP' : 'Serial Port';
       setStatusPill(document.getElementById('statusSerial'), !!s.serialOpen, serialLabel + ': ' + (s.serialOpen ? 'Open' : 'Closed'));
+      setConfigToggle(document.getElementById('portToggleBtn'), !!s.serialOpen);
       const simVisible = ifaceType === 'sim';
       setHidden('statusSim', !simVisible);
-      if (simVisible)
-        setStatusPill(document.getElementById('statusSim'), !!s.simOn, 'SIM: ' + (s.simOn ? 'On' : 'Off'));
+      setHidden('iface1SimWrap', !simVisible);
+      if (simVisible) {
+        setStatusPill(document.getElementById('statusSim'), !!s.simOn, 'C-Bus Link: ' + (s.simOn ? 'On' : 'Off'));
+        setConfigToggle(document.getElementById('simToggleBtn'), !!s.simOn);
+      }
+      const hardwareBurdenAvailable = !!s.hardwareBurdenAvailable;
+      setHidden('hardwareBurdenWrap', !hardwareBurdenAvailable);
+      setConfigToggle(document.getElementById('hardwareBurdenToggleBtn'), !!s.hardwareBurdenOn, !hardwareBurdenAvailable);
       setStatusPill(document.getElementById('statusMqtt'), !!s.mqttConnected, 'MQTT: ' + (s.mqttConnected ? 'Connected' : 'Disconnected'));
       const serialOpen = !!s.serialOpen;
       const rawV = s.cbusVoltage;
@@ -1500,12 +1544,16 @@
       setText('iface2LastTRx', s2.lastTcpRxAtLocal ?? '-');
       setText('iface2LastErr', s2.lastError ?? '-');
       const iface2Type = (((s2.type || '') || document.getElementById('iface2Type')?.value || 'pci')).toLowerCase();
-      const iface2Label = iface2Type === 'cni' ? 'TCP' : 'Serial';
+      const iface2Label = iface2Type === 'cni' ? 'TCP' : 'Serial Port';
       setStatusPill(document.getElementById('statusSerial2'), !!s2.serialOpen, iface2Label + ': ' + (s2.serialOpen ? 'Open' : 'Closed'));
+      setConfigToggle(document.getElementById('port2ToggleBtn'), !!s2.serialOpen);
       const sim2Visible = iface2Type === 'sim';
       setHidden('statusSim2', !sim2Visible);
-      if (sim2Visible)
-        setStatusPill(document.getElementById('statusSim2'), !!s2.simOn, 'SIM: ' + (s2.simOn ? 'On' : 'Off'));
+      setHidden('iface2SimWrap', !sim2Visible);
+      if (sim2Visible) {
+        setStatusPill(document.getElementById('statusSim2'), !!s2.simOn, 'C-Bus Link: ' + (s2.simOn ? 'On' : 'Off'));
+        setConfigToggle(document.getElementById('sim2ToggleBtn'), !!s2.simOn);
+      }
 
       // Mode
       const sel = document.getElementById('modeSel');
@@ -1580,15 +1628,33 @@
     }
   }
 
-  async function postCmd(path, msgEl){
-    if (msgEl) msgEl.textContent = '...';
+  async function postCmd(path, msgEl, flashBtn){
+    if (msgEl) msgEl.textContent = '';
     try{
       const r = await fetch(path, { method: 'POST' });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || j.ok === false) throw new Error(j.error || ('HTTP ' + r.status));
-      if (msgEl) flashSuccess(msgEl, 'OK');
+      if (flashBtn) flashButtonSuccess(flashBtn);
     }catch(e){
       if (msgEl) msgEl.textContent = 'ERR: ' + (e?.message ?? e);
+    }
+  }
+
+  async function postToggle(btn, onPath, offPath, msgEl){
+    if (!btn) return;
+    const turnOn = btn.getAttribute('aria-pressed') !== 'true';
+    const path = turnOn ? onPath : offPath;
+    btn.disabled = true;
+    if (msgEl) msgEl.textContent = '';
+    try{
+      const r = await fetch(path, { method: 'POST' });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j.ok === false) throw new Error(j.error || ('HTTP ' + r.status));
+      setConfigToggle(btn, turnOn);
+      tick();
+    }catch(e){
+      if (msgEl) msgEl.textContent = 'ERR: ' + (e?.message ?? e);
+      btn.disabled = false;
     }
   }
 
@@ -1597,36 +1663,27 @@
     updateIface1ModeUi(e.target.value);
   });
 
-  // Port + SIM controls
-  document.getElementById('portEnableBtn').addEventListener('click', () =>
-    postCmd('/control/port/enable', document.getElementById('portMsg'))
-  );
-  document.getElementById('portDisableBtn').addEventListener('click', () =>
-    postCmd('/control/port/disable', document.getElementById('portMsg'))
+  // Serial Port, C-Bus Link and hardware burden controls
+  document.getElementById('portToggleBtn').addEventListener('click', (e) =>
+    postToggle(e.currentTarget, '/control/port/enable', '/control/port/disable', document.getElementById('portMsg'))
   );
   document.getElementById('portResetBtn').addEventListener('click', () =>
-    postCmd('/control/reset', document.getElementById('portMsg'))
+    postCmd('/control/reset', document.getElementById('portMsg'), document.getElementById('portResetBtn'))
   );
-  document.getElementById('simOnBtn').addEventListener('click', () =>
-    postCmd('/control/sim/on', document.getElementById('simMsg'))
+  document.getElementById('simToggleBtn').addEventListener('click', (e) =>
+    postToggle(e.currentTarget, '/control/sim/on', '/control/sim/off', document.getElementById('simMsg'))
   );
-  document.getElementById('simOffBtn').addEventListener('click', () =>
-    postCmd('/control/sim/off', document.getElementById('simMsg'))
+  document.getElementById('hardwareBurdenToggleBtn').addEventListener('click', (e) =>
+    postToggle(e.currentTarget, '/control/hardware-burden/on', '/control/hardware-burden/off', document.getElementById('hardwareBurdenMsg'))
   );
-  document.getElementById('port2EnableBtn').addEventListener('click', () =>
-    postCmd('/control2/port/enable', document.getElementById('port2Msg'))
-  );
-  document.getElementById('port2DisableBtn').addEventListener('click', () =>
-    postCmd('/control2/port/disable', document.getElementById('port2Msg'))
+  document.getElementById('port2ToggleBtn').addEventListener('click', (e) =>
+    postToggle(e.currentTarget, '/control2/port/enable', '/control2/port/disable', document.getElementById('port2Msg'))
   );
   document.getElementById('port2ResetBtn').addEventListener('click', () =>
-    postCmd('/control2/reset', document.getElementById('port2Msg'))
+    postCmd('/control2/reset', document.getElementById('port2Msg'), document.getElementById('port2ResetBtn'))
   );
-  document.getElementById('sim2OnBtn').addEventListener('click', () =>
-    postCmd('/control2/sim/on', document.getElementById('sim2Msg'))
-  );
-  document.getElementById('sim2OffBtn').addEventListener('click', () =>
-    postCmd('/control2/sim/off', document.getElementById('sim2Msg'))
+  document.getElementById('sim2ToggleBtn').addEventListener('click', (e) =>
+    postToggle(e.currentTarget, '/control2/sim/on', '/control2/sim/off', document.getElementById('sim2Msg'))
   );
   document.getElementById('iface1DiscoverBtn').addEventListener('click', () => discoverCni(1));
   document.getElementById('iface2DiscoverBtn').addEventListener('click', () => discoverCni(2));

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.0 - 2026-08-22
+- Added support for compatible hardware with onboard C-Bus hardware burden control.
+- Improved the Interface controls with clearer wording and toggle-style controls.
+- Added a review step when importing C-Bus groups so entries can be checked before saving.
+- Improved the C-Bus group import layout and merge status display.
+- Improved serial interface initialisation and reset behaviour.
+- Improved licence failure messages when the connected C-Bus interface cannot be verified.
+
 ## 2.0.1 - 2026-07-12
 - Updated the Tether Control app icon.
 - Fixed the Licence Key field label and description in the Home Assistant add-on configuration page.

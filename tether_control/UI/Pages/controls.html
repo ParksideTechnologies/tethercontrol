@@ -1481,7 +1481,7 @@
       if (licence.isValid){
         warning.classList.add('hidden');
       } else {
-        warning.textContent = 'Failure: Licence key is invalid.';
+        warning.textContent = 'Failure: ' + (licence.message || 'Licence key is invalid.');
         warning.classList.remove('hidden');
       }
     }catch{

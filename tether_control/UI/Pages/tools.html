@@ -56,6 +56,37 @@
     dialog { border: 1px solid var(--line); border-radius: 18px; padding: 16px; background: color-mix(in srgb, var(--card) 97%, white); color: var(--ink); min-width: 560px; max-width: 90vw; }
     dialog::backdrop { background: var(--dialog-backdrop); }
     dialog h3 { margin:0 0 10px 0; }
+    .group-import-dialog { width: min(1380px, 98vw); max-width: 98vw; }
+    .group-import-dialog .dialog-note { max-width: 980px; }
+    .stage-options { margin: 8px 0 10px; }
+    .stage-table-wrap { max-height: 58vh; overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: white; }
+    .stage-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.86em; }
+    .stage-table th, .stage-table td { border-bottom: 1px solid #dceaf5; padding: 4px 2px; text-align: left; vertical-align: middle; white-space: nowrap; }
+    .stage-table th { position: sticky; top: 0; z-index: 1; background: #eaf5fd; }
+    .stage-table tr:last-child td { border-bottom: 0; }
+    .stage-table input, .stage-table select { box-sizing: border-box; max-width: 100%; }
+    .stage-table .col-use { width: 32px; }
+    .stage-table .col-function { width: 128px; }
+    .stage-table .col-entity { width: 214px; }
+    .stage-table .col-type { width: 156px; }
+    .stage-table .col-small { width: 50px; }
+    .stage-table .col-channel { width: 40px; }
+    .stage-table .col-voltage { width: 58px; }
+    .stage-table .col-invert { width: 34px; }
+    .stage-table .col-control-type { width: 116px; }
+    .stage-table .col-pulse { width: 52px; }
+    .stage-table .col-status { width: 128px; }
+    .stage-table .stageFunction,
+    .stage-table .entityInput,
+    .stage-table .typeInput,
+    .stage-table .controlTypeInput { width: 100%; }
+    .stage-table .smallInput { width: 44px; }
+    .stage-table .pulseInput { width: 48px; }
+    .stage-table .statusCell { color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+    .stage-table tr.stage-conflict .statusCell { color: var(--bad-line); font-weight: 600; }
+    .stage-table tr.stage-invalid .statusCell { color: #7a1f1f; font-weight: 600; }
+    .stage-table tr.stage-disabled td:not(:first-child) { opacity: 0.55; }
+    .stage-table input:disabled, .stage-table select:disabled { background: #f0f5f9; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -105,7 +136,6 @@
       <label><input type="checkbox" value="controls" checked /> C-Bus Group Setup</label>
       <label><input type="checkbox" value="mqtt" checked /> MQTT Broker</label>
       <label><input type="checkbox" value="time" checked /> Network Time Manager</label>
-      <label><input type="checkbox" value="interfaces" checked /> Interface</label>
     </div>
     <div class="row tool-actions">
       <span id="exportResult" class="muted modal-result"></span>
@@ -123,7 +153,6 @@
       <label><input type="checkbox" value="controls" /> C-Bus Group Setup</label>
       <label><input type="checkbox" value="mqtt" /> MQTT Broker</label>
       <label><input type="checkbox" value="time" /> Network Time Manager</label>
-      <label><input type="checkbox" value="interfaces" /> Interface</label>
     </div>
     <div class="row">
       <span>C-Bus Group Setup:</span>
@@ -140,15 +169,62 @@
     </div>
   </dialog>
 
-  <dialog id="groupImportDialog">
+  <dialog id="groupImportDialog" class="group-import-dialog">
     <h3>Import C-Bus Groups</h3>
     <p id="groupImportSummary" class="dialog-note"></p>
-    <p class="dialog-note muted">Existing address assignments and entity names take priority.</p>
+    <div class="row stage-options">
+      <label><input id="groupStageSelectAll" type="checkbox" checked /> Select All</label>
+      <span style="flex:1;"></span>
+      <label>
+        Import Mode
+        <select id="groupImportMode">
+          <option value="merge">Merge with existing</option>
+          <option value="replace">Replace existing</option>
+        </select>
+      </label>
+    </div>
+    <div class="stage-table-wrap">
+      <table class="stage-table">
+        <colgroup>
+          <col class="col-use" />
+          <col class="col-function" />
+          <col class="col-entity" />
+          <col class="col-type" />
+          <col class="col-small" />
+          <col class="col-small" />
+          <col class="col-small" />
+          <col class="col-channel" />
+          <col class="col-voltage" />
+          <col class="col-invert" />
+          <col class="col-control-type" />
+          <col class="col-pulse" />
+          <col class="col-status" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Use</th>
+            <th>Function</th>
+            <th>Entity Name</th>
+            <th>Device / Input Type</th>
+            <th>App</th>
+            <th>Group</th>
+            <th>Unit</th>
+            <th>Ch</th>
+            <th>Voltage</th>
+            <th>Invert</th>
+            <th>Control Type</th>
+            <th>Pulse</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="groupImportStageBody"></tbody>
+      </table>
+    </div>
     <div class="row tool-actions">
       <span id="groupImportResult" class="muted modal-result"></span>
       <span style="flex:1;"></span>
       <button id="groupImportCancelBtn" type="button">Cancel</button>
-      <button id="groupImportConfirmBtn" type="button">Import</button>
+      <button id="groupImportConfirmBtn" type="button">Import Selected</button>
     </div>
   </dialog>
 
@@ -187,7 +263,7 @@
         if (licence.isValid){
           warning.classList.add('hidden');
         } else {
-          warning.textContent = 'Failure: Licence key is invalid.';
+          warning.textContent = 'Failure: ' + (licence.message || 'Licence key is invalid.');
           warning.classList.remove('hidden');
         }
       }catch{
@@ -241,14 +317,6 @@
       if (sectionNames.includes('time')){
         sections.time = await fetchJson('/config/time', { cache: 'no-store' });
       }
-      if (sectionNames.includes('interfaces')){
-        const interfaces = await fetchJson('/config/interfaces', { cache: 'no-store' });
-        const stats = await fetchJson('/api/stats', { cache: 'no-store' });
-        sections.interfaces = {
-          mode: stats.mode || 'control',
-          interfaces: interfaces.interfaces || []
-        };
-      }
       return {
         format: CONFIG_FORMAT,
         schemaVersion: CONFIG_SCHEMA_VERSION,
@@ -261,6 +329,87 @@
 
     function normaliseFunction(device){
       return (device?.function || 'control').toString().trim().toLowerCase();
+    }
+
+    function normalizeMeasInputType(value){
+      const v = (value ?? '').toString().trim().toLowerCase();
+      if (v === 'a' || v === 'amp' || v === 'amps' || v === 'current') return 'current';
+      if (v === 'c' || v === 'degc' || v === 'celsius' || v === 'temperature') return 'temperature';
+      if (v === 'humidity' || v === 'humid' || v === 'rh' || v === '%' || v === 'percent') return 'humidity';
+      return v || 'temperature';
+    }
+
+    function measurementInputUsesVoltage(inputType){
+      return normalizeMeasInputType(inputType) === 'current';
+    }
+
+    function normalizeVoltageValue(value){
+      const raw = (value ?? '').toString().trim();
+      if (!raw) return '240';
+      const n = Number(raw);
+      if (Number.isFinite(n) && n > 0) return String(n);
+      return '240';
+    }
+
+    const CONTROL_DEVICE_TYPES = [
+      { value: 'switch', label: 'Switch' },
+      { value: 'light', label: 'Light' },
+      { value: 'dimmer', label: 'Dimmer' },
+      { value: 'fan', label: 'Fan' }
+    ];
+
+    const MEAS_INPUT_TYPES = [
+      { value: 'current', label: 'Current (A)' },
+      { value: 'temperature', label: 'Temperature (C)' },
+      { value: 'humidity', label: 'Humidity (%)' }
+    ];
+
+    const SHUTTER_DEVICE_TYPES = [
+      { value: 'shutter', label: 'Shutter' },
+      { value: 'roller_door', label: 'Roller Door' },
+      { value: 'blind', label: 'Blind' },
+      { value: 'curtain', label: 'Curtain' }
+    ];
+
+    const SHUTTER_CONTROL_TYPES = [
+      { value: 'up_down_off', label: 'Up/Down/Off' },
+      { value: 'toggle', label: 'Toggle' },
+      { value: 'pulse', label: 'Pulse' }
+    ];
+
+    function hasOption(list, value){
+      return list.some(item => item.value === value);
+    }
+
+    function coerceDeviceTypeForFunction(func, deviceType){
+      const value = (deviceType || '').toString().trim().toLowerCase();
+      if (func === 'binary_sensor') return 'binary_sensor';
+      if (func === 'measurement') return 'measurement';
+      if (func === 'shutter') return hasOption(SHUTTER_DEVICE_TYPES, value) ? value : 'shutter';
+      return hasOption(CONTROL_DEVICE_TYPES, value) ? value : 'switch';
+    }
+
+    function coerceInputTypeForFunction(func, inputType){
+      if (func !== 'measurement') return 'temperature';
+      const value = normalizeMeasInputType(inputType || 'temperature');
+      return hasOption(MEAS_INPUT_TYPES, value) ? value : 'temperature';
+    }
+
+    function escapeHtml(value){
+      return (value ?? '').toString()
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function buildOptions(list, selectedRaw){
+      const selected = (selectedRaw ?? '').toString().trim().toLowerCase();
+      const known = list.some(x => x.value === selected);
+      let html = list.map(x => `<option value="${escapeHtml(x.value)}" ${x.value === selected ? 'selected' : ''}>${escapeHtml(x.label)}</option>`).join('');
+      if (selected && !known) html += `<option value="${escapeHtml(selected)}" selected>${escapeHtml(selected)}</option>`;
+      return html;
     }
 
     function addressKey(device){
@@ -293,6 +442,199 @@
       return { controls: merged, added: merged.length - existing.length, skipped };
     }
 
+    function normalizeStageDevice(device){
+      const func = normaliseFunction(device);
+      const entityName = (device?.deviceName || device?.name || '').toString().trim();
+      const normalized = {
+        function: ['control', 'binary_sensor', 'measurement', 'shutter'].includes(func) ? func : 'control',
+        name: '',
+        deviceName: entityName,
+        deviceType: coerceDeviceTypeForFunction(func, device?.deviceType || 'switch'),
+        app: Number(device?.app ?? 56),
+        group: Number(device?.group ?? 0),
+        invert: !!device?.invert,
+        controlType: (device?.controlType || 'up_down_off').toString().trim().toLowerCase(),
+        pulseSeconds: Number(device?.pulseSeconds ?? 0.25),
+        unitId: Number(device?.unitId ?? 0),
+        channel: Number(device?.channel ?? 0),
+        onlyOnChange: device?.onlyOnChange !== false,
+        inputType: coerceInputTypeForFunction(func, device?.inputType || 'temperature'),
+        voltageCalc: normalizeVoltageValue(device?.voltageCalc ?? device?.externalVoltage ?? '240'),
+        sendTime: device?.sendTime !== false,
+        sendDate: device?.sendDate !== false,
+        scheduleMode: device?.scheduleMode || 'daily',
+        dailyTime: device?.dailyTime || '02:00',
+        intervalMins: Number(device?.intervalMins ?? 60),
+        skipMidnight: device?.skipMidnight !== false,
+        midnightWindowMin: Number(device?.midnightWindowMin ?? 10)
+      };
+      return normalized;
+    }
+
+    function optionsForStageType(device){
+      const func = normaliseFunction(device);
+      if (func === 'measurement') return buildOptions(MEAS_INPUT_TYPES, normalizeMeasInputType(device.inputType));
+      if (func === 'shutter') return buildOptions(SHUTTER_DEVICE_TYPES, device.deviceType || 'shutter');
+      if (func === 'binary_sensor') return buildOptions([{ value: 'binary_sensor', label: 'Binary Sensor' }], 'binary_sensor');
+      return buildOptions(CONTROL_DEVICE_TYPES, device.deviceType || 'switch');
+    }
+
+    function renderGroupImportStage(){
+      const body = document.getElementById('groupImportStageBody');
+      const devices = pendingGroupImport?.devices || [];
+      body.innerHTML = devices.map((raw, index) => {
+        const d = normalizeStageDevice(raw);
+        const func = normaliseFunction(d);
+        const isMeasurement = func === 'measurement';
+        const isBinary = func === 'binary_sensor';
+        const isShutter = func === 'shutter';
+        const showVoltage = isMeasurement && measurementInputUsesVoltage(d.inputType);
+        return `
+          <tr data-index="${index}">
+            <td><input class="stageUse" type="checkbox" ${raw?.selected === false ? '' : 'checked'} /></td>
+            <td>
+              <select class="stageFunction">
+                <option value="control" ${func === 'control' ? 'selected' : ''}>Control</option>
+                <option value="binary_sensor" ${func === 'binary_sensor' ? 'selected' : ''}>Binary Sensor</option>
+                <option value="measurement" ${func === 'measurement' ? 'selected' : ''}>Measurement</option>
+                <option value="shutter" ${func === 'shutter' ? 'selected' : ''}>Shutter</option>
+              </select>
+            </td>
+            <td><input class="stageDeviceName entityInput" value="${escapeHtml(d.deviceName)}" placeholder="Entity name" /></td>
+            <td><select class="stageType typeInput" ${isBinary ? 'disabled' : ''}>${optionsForStageType(d)}</select></td>
+            <td><input class="stageApp smallInput" inputmode="numeric" value="${isMeasurement ? '' : escapeHtml(d.app)}" ${isMeasurement ? 'disabled' : ''} /></td>
+            <td><input class="stageGroup smallInput" inputmode="numeric" value="${isMeasurement ? '' : escapeHtml(d.group)}" ${isMeasurement ? 'disabled' : ''} /></td>
+            <td><input class="stageUnit smallInput" inputmode="numeric" value="${isMeasurement ? escapeHtml(d.unitId) : ''}" ${isMeasurement ? '' : 'disabled'} /></td>
+            <td><input class="stageChannel smallInput" inputmode="numeric" value="${isMeasurement ? escapeHtml(d.channel) : ''}" ${isMeasurement ? '' : 'disabled'} /></td>
+            <td><input class="stageVoltage smallInput" value="${showVoltage ? escapeHtml(d.voltageCalc) : ''}" ${showVoltage ? '' : 'disabled'} /></td>
+            <td><input class="stageInvert" type="checkbox" ${d.invert ? 'checked' : ''} ${isBinary ? '' : 'disabled'} /></td>
+            <td><select class="stageControlType controlTypeInput" ${isShutter ? '' : 'disabled'}>${buildOptions(SHUTTER_CONTROL_TYPES, d.controlType || 'up_down_off')}</select></td>
+            <td><input class="stagePulse pulseInput" value="${isShutter ? escapeHtml(d.pulseSeconds) : ''}" ${isShutter ? '' : 'disabled'} /></td>
+            <td class="statusCell"></td>
+          </tr>
+        `;
+      }).join('');
+      refreshGroupStageStatus();
+    }
+
+    function collectGroupImportStageRows(){
+      return Array.from(document.querySelectorAll('#groupImportStageBody tr')).map(tr => {
+        const func = tr.querySelector('.stageFunction')?.value || 'control';
+        const isMeasurement = func === 'measurement';
+        const isBinary = func === 'binary_sensor';
+        const isShutter = func === 'shutter';
+        const rawTypeValue = tr.querySelector('.stageType')?.value || '';
+        const typeValue = coerceDeviceTypeForFunction(func, rawTypeValue);
+        const inputType = coerceInputTypeForFunction(func, rawTypeValue);
+        return {
+          selected: !!tr.querySelector('.stageUse')?.checked,
+          device: {
+            function: func,
+            name: '',
+            deviceName: tr.querySelector('.stageDeviceName')?.value?.trim() || '',
+            deviceType: typeValue,
+            app: isMeasurement ? 0 : Number(tr.querySelector('.stageApp')?.value || 0),
+            group: isMeasurement ? 0 : Number(tr.querySelector('.stageGroup')?.value || 0),
+            invert: isBinary && !!tr.querySelector('.stageInvert')?.checked,
+            controlType: isShutter ? (tr.querySelector('.stageControlType')?.value || 'up_down_off') : 'up_down_off',
+            pulseSeconds: isShutter ? Number(tr.querySelector('.stagePulse')?.value || 0.25) : 0.25,
+            unitId: isMeasurement ? Number(tr.querySelector('.stageUnit')?.value || 0) : 0,
+            channel: isMeasurement ? Number(tr.querySelector('.stageChannel')?.value || 0) : 0,
+            onlyOnChange: true,
+            inputType,
+            voltageCalc: isMeasurement && measurementInputUsesVoltage(inputType)
+              ? normalizeVoltageValue(tr.querySelector('.stageVoltage')?.value || '240')
+              : '240',
+            sendTime: true,
+            sendDate: true,
+            scheduleMode: 'daily',
+            dailyTime: '02:00',
+            intervalMins: 60,
+            skipMidnight: true,
+            midnightWindowMin: 10
+          },
+          row: tr
+        };
+      });
+    }
+
+    function validateStageDevice(device){
+      const func = normaliseFunction(device);
+      if (!device.deviceName.trim()) return 'Missing name';
+      if (func === 'measurement'){
+        if (!Number.isInteger(device.unitId) || device.unitId < 0 || device.unitId > 255) return 'Invalid unit';
+        if (!Number.isInteger(device.channel) || device.channel < 0 || device.channel > 255) return 'Invalid channel';
+      } else {
+        if (!Number.isInteger(device.app) || device.app < 0 || device.app > 255) return 'Invalid app';
+        if (!Number.isInteger(device.group) || device.group < 0 || device.group > 255) return 'Invalid group';
+      }
+      if (func === 'shutter' && (!Number.isFinite(device.pulseSeconds) || device.pulseSeconds <= 0)) return 'Invalid pulse';
+      return '';
+    }
+
+    function refreshGroupStageStatus(){
+      const mode = document.getElementById('groupImportMode')?.value || 'merge';
+      const rows = collectGroupImportStageRows();
+      const existing = pendingGroupImport?.existing || [];
+      const existingAddresses = new Set(existing.map(addressKey));
+      const existingNames = new Set(existing.map(entityNameKey).filter(Boolean));
+      const selectedDevices = [];
+      let selectedCount = 0;
+      let conflictCount = 0;
+      let invalidCount = 0;
+      for (const item of rows){
+        const tr = item.row;
+        const status = tr.querySelector('.statusCell');
+        tr.classList.toggle('stage-disabled', !item.selected);
+        tr.classList.remove('stage-conflict', 'stage-invalid');
+        if (!item.selected){
+          if (status) status.textContent = 'Not imported';
+          continue;
+        }
+        selectedCount++;
+        const validation = validateStageDevice(item.device);
+        if (validation){
+          invalidCount++;
+          tr.classList.add('stage-invalid');
+          if (status) status.textContent = validation;
+          continue;
+        }
+        if (mode === 'merge' && (existingAddresses.has(addressKey(item.device)) || existingNames.has(entityNameKey(item.device)))){
+          conflictCount++;
+          tr.classList.add('stage-conflict');
+          if (status) status.textContent = 'Skipped in merge';
+        } else if (status) {
+          status.textContent = 'Ready';
+        }
+        selectedDevices.push(item.device);
+      }
+      const mergeResult = mode === 'merge'
+        ? mergeControls(existing, selectedDevices)
+        : { added: selectedDevices.length, skipped: 0 };
+      const parsed = pendingGroupImport?.parsed || {};
+      const skippedParts = [
+        parsed.skippedUnknown ? `${parsed.skippedUnknown} unknown` : '',
+        parsed.skippedUnused ? `${parsed.skippedUnused} unused` : '',
+        parsed.skippedOutOfRange ? `${parsed.skippedOutOfRange} out of range` : '',
+        parsed.skippedMeasurement ? `${parsed.skippedMeasurement} measurement apps` : '',
+        parsed.skippedInactiveApp ? `${parsed.skippedInactiveApp} disabled apps` : '',
+        parsed.skippedDisabled ? `${parsed.skippedDisabled} disabled nodes` : '',
+        parsed.skippedInvalid ? `${parsed.skippedInvalid} invalid` : '',
+        parsed.skippedUnknownType ? `${parsed.skippedUnknownType} unknown node types` : ''
+      ].filter(Boolean);
+      const skipText = skippedParts.length ? ` Skipped during parse: ${skippedParts.join(', ')}.` : '';
+      document.getElementById('groupImportSummary').textContent =
+        `${rows.length} valid entries found. ${selectedCount} selected. ${mode === 'merge' ? `${mergeResult.added} will be added and ${conflictCount} conflict(s) will be skipped.` : `${selectedDevices.length} will replace the current C-Bus Group Setup list.`}${invalidCount ? ` ${invalidCount} row(s) need fixing.` : ''}${skipText}`;
+      document.getElementById('groupImportConfirmBtn').disabled = selectedCount === 0 || invalidCount > 0 || (mode === 'merge' && mergeResult.added === 0);
+      document.getElementById('groupStageSelectAll').checked = rows.length > 0 && rows.every(r => r.selected);
+    }
+
+    function syncStageFunctionRow(tr){
+      if (!pendingGroupImport) return;
+      pendingGroupImport.devices = collectGroupImportStageRows().map(row => ({ ...row.device, selected: row.selected }));
+      renderGroupImportStage();
+    }
+
     async function importConfiguration(){
       const sectionsToImport = selectedValues(document.getElementById('importSections'));
       if (!sectionsToImport.length) throw new Error('Select at least one section.');
@@ -323,18 +665,6 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(source.time || {})
-        });
-      }
-      if (sectionsToImport.includes('interfaces')){
-        await fetchJson('/config/interfaces', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ interfaces: source.interfaces?.interfaces || [] })
-        });
-        await fetchJson('/config/mode', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mode: source.interfaces?.mode || 'control' })
         });
       }
       if (sectionsToImport.includes('controls')){
@@ -458,11 +788,14 @@
         const parsed = await fetchJson('/config/control/import/toolkit', { method: 'POST', body: form });
         const incoming = Array.isArray(parsed.devices) ? parsed.devices : [];
         const existing = (await fetchJson('/config/controls', { cache: 'no-store' })).controls || [];
-        const merged = mergeControls(existing, incoming);
-        pendingGroupImport = merged;
-        document.getElementById('groupImportSummary').textContent =
-          `${incoming.length} valid entries were found. ${merged.added} will be added and ${merged.skipped} existing address or entity-name conflicts will be skipped.`;
-        document.getElementById('groupImportConfirmBtn').disabled = merged.added === 0;
+        pendingGroupImport = {
+          existing,
+          devices: incoming.map(device => ({ ...normalizeStageDevice(device), selected: true })),
+          parsed
+        };
+        document.getElementById('groupImportMode').value = 'merge';
+        document.getElementById('groupStageSelectAll').checked = true;
+        renderGroupImportStage();
         document.getElementById('groupImportCancelBtn').textContent = 'Cancel';
         setMessage(document.getElementById('groupImportResult'), '');
         openDialog(document.getElementById('groupImportDialog'));
@@ -470,6 +803,7 @@
       }catch(error){
         pendingGroupImport = null;
         document.getElementById('groupImportSummary').textContent = file.name;
+        document.getElementById('groupImportStageBody').innerHTML = '';
         document.getElementById('groupImportConfirmBtn').disabled = true;
         document.getElementById('groupImportCancelBtn').textContent = 'Close';
         setMessage(document.getElementById('groupImportResult'), 'Failure');
@@ -483,19 +817,50 @@
       pendingGroupImport = null;
       closeDialog(document.getElementById('groupImportDialog'));
     });
+    document.getElementById('groupImportMode').addEventListener('change', refreshGroupStageStatus);
+    document.getElementById('groupStageSelectAll').addEventListener('change', event => {
+      document.querySelectorAll('#groupImportStageBody .stageUse').forEach(input => { input.checked = event.currentTarget.checked; });
+      refreshGroupStageStatus();
+    });
+    document.getElementById('groupImportStageBody').addEventListener('input', event => {
+      const target = event.target;
+      if (target?.classList?.contains('stageFunction') || target?.classList?.contains('stageType')){
+        syncStageFunctionRow(target.closest('tr'));
+      } else {
+        refreshGroupStageStatus();
+      }
+    });
+    document.getElementById('groupImportStageBody').addEventListener('change', event => {
+      const target = event.target;
+      if (target?.classList?.contains('stageFunction') || target?.classList?.contains('stageType')){
+        syncStageFunctionRow(target.closest('tr'));
+      } else {
+        refreshGroupStageStatus();
+      }
+    });
     document.getElementById('groupImportConfirmBtn').addEventListener('click', async event => {
       const button = event.currentTarget;
       try{
         if (!pendingGroupImport) return;
         button.disabled = true;
+        const staged = collectGroupImportStageRows()
+          .filter(item => item.selected)
+          .map(item => item.device);
+        if (!staged.length) throw new Error('No rows selected.');
+        let controls = staged;
+        if (document.getElementById('groupImportMode').value === 'merge'){
+          const current = (await fetchJson('/config/controls', { cache: 'no-store' })).controls || [];
+          controls = mergeControls(current, staged).controls;
+        }
         await fetchJson('/config/controls', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ controls: pendingGroupImport.controls })
+          body: JSON.stringify({ controls })
         });
         pendingGroupImport = null;
         document.getElementById('groupImportFile').value = '';
         document.getElementById('groupFileName').textContent = 'No file chosen';
+        document.getElementById('groupImportStageBody').innerHTML = '';
         document.getElementById('groupImportCancelBtn').textContent = 'Close';
         setMessage(document.getElementById('groupImportResult'), 'Success', true);
       }catch(error){
