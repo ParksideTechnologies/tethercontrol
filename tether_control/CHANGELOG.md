@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.1 - 2026-08-25
+- Added automatic recovery when C-Bus communication drops while the serial interface remains open.
+- Improved recovery after a C-Bus network power interruption.
+- Sends the configured network time/date update after communication is restored.
+
 ## 2.1.0 - 2026-08-22
 - Added support for compatible hardware with onboard C-Bus hardware burden control.
 - Improved the Interface controls with clearer wording and toggle-style controls.
