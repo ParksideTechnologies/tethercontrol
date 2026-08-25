@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.2 - 2026-08-25
+- Improved the Configuration page layout for a cleaner, more concise setup view.
+- Improved C-Bus Interface controls and mode-change confirmation.
+- Improved Network Time Manager setup with clearer Daily and Interval options.
+- Improved C-Bus Applications and MQTT Broker layout.
+
 ## 2.1.1 - 2026-08-25
 - Added automatic recovery when C-Bus communication drops while the serial interface remains open.
 - Improved recovery after a C-Bus network power interruption.

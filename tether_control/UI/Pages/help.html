@@ -58,7 +58,7 @@
       <div class="help-layout">
         <aside class="help-index">
           <p>Help Index</p>
-          <a href="#interface">Interface</a>
+          <a href="#interface">C-Bus Interface</a>
           <a href="#status">Status</a>
           <a href="#cbus-applications">C-Bus Applications</a>
           <a href="#mqtt-broker">MQTT Broker</a>
@@ -70,17 +70,17 @@
         </aside>
         <main class="help-content">
           <section id="interface">
-            <h2><b>Interface</b></h2>
+            <h2><b>C-Bus Interface</b></h2>
             <p>This section controls how Tether Control talks to your C-Bus network. Control mode is for normal day-to-day operation, including controlling C-Bus from Home Assistant and updating entities from C-Bus network events. Interface mode provides a direct C-Bus connection for tools such as Toolkit and Commission.</p>
             <p>The Serial Port toggle opens or closes the local serial connection used by Tether Control. Reset remains available for recovering from serial communication faults. If communication drops out, Reset is usually the best first step.</p>
-            <p>The C-Bus Link toggle controls the on-board relay used to disconnect and reconnect the C-Bus interface from the network. Use this to physically remove the interface from the network if the interface locks up.</p>
+            <p>The Network Connection toggle controls the on-board relay used to disconnect and reconnect the C-Bus interface from the network. Use this to physically remove the interface from the network if the interface locks up.</p>
             <p>The Hardware Burden toggle is shown only on systems with compatible hardware. Turning it on connects the onboard hardware burden circuit to the C-Bus network. Turning it off disconnects that burden. This is necessary for small networks and can be useful if network communication is unstable.</p>
           </section>
 
           <section id="status">
             <h2><b>Status</b></h2>
             <p>Status pills show current health at a glance. Green means working. Red means attention is needed.</p>
-            <p>Serial Port and C-Bus Link show communication and relay state. C-Bus Voltage helps confirm the bus is present and readable.</p>
+            <p>Serial Port and Network Connection show communication and relay state. C-Bus Voltage helps confirm the bus is present and readable.</p>
             <p>In Interface mode, the Client, Bytes and Last RX lines help confirm the connected tool and live traffic. Last error gives the most recent problem message if something fails.</p>
           </section>
 
@@ -96,13 +96,13 @@
             <p>This section connects Tether Control to your MQTT broker. Enter the broker address, port and any login details needed by your broker.</p>
             <p>The status line confirms whether the connection is active. If disconnected, check address, port, username and password first.</p>
             <p>Configured entities are published to Home Assistant under a single MQTT device named Tether Control. If your broker uses restrictions, make sure Tether Control is allowed to connect and publish discovery, state and command topics.</p>
-            <p>Tether Control publishes availability information so C-Bus entities become unavailable when control communications stop or Interface mode is active. Diagnostic entities for Mode, Serial Comms, C-Bus Link and C-Bus Voltage remain available while Tether Control itself is connected to MQTT.</p>
+            <p>Tether Control publishes availability information so C-Bus entities become unavailable when control communications stop or Interface mode is active. Diagnostic entities for Mode, Serial Comms, Network Connection and C-Bus Voltage remain available while Tether Control itself is connected to MQTT.</p>
           </section>
 
           <section id="time-manager">
             <h2><b>Network Time Manager</b></h2>
-            <p>This section controls when time and date updates are sent to the C-Bus network for devices such as DLTs and eDLTs. Updates can be sent daily, at a repeating interval, or only when requested.</p>
-            <p>The time and date are taken from the host system. Use Set Now to send an immediate update after a network shutdown, device reconnection or clock correction. Scheduled updates inside the 11:50 PM to 12:10 AM no-go period are delayed until 12:11 AM.</p>
+            <p>This section controls when time and date updates are sent to the C-Bus network for devices such as DLTs and eDLTs. Updates can be sent daily, at a repeating interval, or when requested.</p>
+            <p>The time and date are taken from the host system. Use Set Now to send an immediate update after a network shutdown, device reconnection or clock correction.</p>
           </section>
 
           <section id="controls-page">

@@ -170,15 +170,29 @@
     .password-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .password-toggle .eye-slash { display: none; }
     .password-toggle[aria-pressed="true"] .eye-slash { display: block; }
-    .modeMsg { display:inline-block; max-width:70px; line-height:1.1; white-space:normal; }
+    .section-heading { margin:0 0 8px 0; font-size: 1.15rem; font-weight: 700; }
+    .interface-settings-label { font-weight: 700; }
+    .modeMsg { display:inline-block; max-width:110px; line-height:1.1; white-space:normal; }
     .hidden { display:none !important; }
     .core-app-wrap { display:grid; grid-template-columns: 1fr auto; gap: 12px; align-items:end; }
     .core-app-table { min-width: 0; }
+    .core-app-table table { width: auto; border-collapse: collapse; }
+    .core-app-table th, .core-app-table td { padding: 4px 6px; text-align: left; vertical-align: middle; }
+    .core-app-table th { font-weight: 600; }
+    .core-app-table th:first-child, .core-app-table td:first-child { width: 58px; padding-left: 0; text-align: center; }
+    .core-app-table .coreType { width: 132px; }
+    .core-app-table .coreApp { width: 74px; }
+    .core-app-table .coreName { width: 180px; }
     .core-app-actions { margin-top:0; justify-content:flex-end; }
-    dialog#cniDiscoverDialog, dialog#unsavedConfirmDialog { border: 1px solid var(--line); border-radius: 18px; padding: 14px; background: color-mix(in srgb, var(--card) 97%, white); color: var(--ink); }
+    .time-field { width: 64px; }
+    .time-period { width: 70px; }
+    .time-interval { width: 70px; }
+    dialog#cniDiscoverDialog, dialog#unsavedConfirmDialog, dialog#modeConfirmDialog { border: 1px solid var(--line); border-radius: 18px; padding: 14px; background: color-mix(in srgb, var(--card) 97%, white); color: var(--ink); }
     dialog#cniDiscoverDialog { min-width: 760px; max-width: 95vw; }
     dialog#unsavedConfirmDialog { min-width: 360px; }
-    dialog#cniDiscoverDialog::backdrop, dialog#unsavedConfirmDialog::backdrop { background: var(--dialog-backdrop); }
+    dialog#modeConfirmDialog { width: max-content; min-width: 0; max-width: 95vw; }
+    #modeConfirmText { white-space: nowrap; }
+    dialog#cniDiscoverDialog::backdrop, dialog#unsavedConfirmDialog::backdrop, dialog#modeConfirmDialog::backdrop { background: var(--dialog-backdrop); }
     .cni-discovery-loading { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; min-height: 140px; }
     .cni-discovery-spinner { width: 30px; height: 30px; border: 3px solid #d6e5f1; border-top-color: var(--accent); border-radius: 50%; animation: cni-spin 0.8s linear infinite; }
     .cni-discovery-state { width: 30px; height: 30px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-weight: 700; font-size: 18px; border: 2px solid transparent; }
@@ -213,15 +227,51 @@
 
     <div class="card">
     <div class="card" id="interfacesCard">
-    <p style="margin:0 0 8px 0;"><b>Interface</b></p>
-    <div class="row" style="margin-top:8px;">
-      <span class="pill">
-        Type: SIM
-        <input id="iface1Type" type="hidden" value="sim" />
+    <p class="section-heading">C-Bus Interface</p>
+    <div style="display:none;">
+      <input id="iface1Type" type="hidden" value="sim" />
+      <input id="serialDeviceInput" type="hidden" value="/dev/ttyAMA0" readonly />
+      <input id="iface1PortInput" value="10001" />
+      <button id="iface1DiscoverBtn" type="button"></button>
+      <span id="iface1PortWrapTop"></span>
+      <span id="iface1PortLabel"></span>
+    </div>
+
+    <div class="row" style="margin-top:10px;">
+      <p style="margin:0;"><b>Status:</b></p>
+      <div class="row">
+        <span id="statusSerial" class="status-pill status-bad">Serial: Closed</span>
+        <span id="statusSim" class="status-pill status-bad">Network Connection: Disabled</span>
+        <span id="statusVoltage" class="status-pill status-bad">C-Bus Voltage: --.-V</span>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;" id="iface1StatsBox">
+      <p><b>Client:</b> <span id="clientRemote">-</span> (since <span id="clientSince">-</span>)</p>
+      <p><b>Bytes:</b> <span id="bytesLabelA">Serial→TCP</span> <span id="bST">0</span> | <span id="bytesLabelB">TCP→Serial</span> <span id="bTS">0</span></p>
+      <p><b>Last RX:</b> <span id="lastRxLabelA">Serial</span> <span id="lastSRx">-</span> | <span id="lastRxLabelB">TCP</span> <span id="lastTRx">-</span></p>
+      <p><b>Uptime:</b> <span id="uptime">-</span></p>
+      <div class="row" style="margin-top:0; justify-content: space-between;">
+        <p style="margin:0;"><b>Last error:</b> <span id="lastErr">-</span></p>
+        <span class="muted" id="ifaceSaveSpacer"></span>
+      </div>
+      <div class="row" style="margin-top:10px;">
+      <span class="interface-settings-label">Settings:</span>
+      <span class="pill" id="iface1PortWrap">
+        Serial Port:
+        <button id="portToggleBtn" class="config-toggle" type="button" aria-pressed="false" title="Toggle serial port"><span class="toggle-thumb"></span></button>
+        <button id="portResetBtn" type="button">Reset</button>
+        <span class="muted" id="portMsg"></span>
       </span>
-      <span class="pill" id="iface1DeviceWrap">
-        <span id="iface1DeviceLabel">Device:</span>
-        <input id="serialDeviceInput" style="min-width:160px;" value="/dev/ttyAMA0" readonly />
+      <span class="pill" id="iface1SimWrap">
+        Network Connection:
+        <button id="simToggleBtn" class="config-toggle" type="button" aria-pressed="false" title="Toggle network connection"><span class="toggle-thumb"></span></button>
+        <span class="muted" id="simMsg"></span>
+      </span>
+      <span class="pill hidden" id="hardwareBurdenWrap">
+        Hardware Burden:
+        <button id="hardwareBurdenToggleBtn" class="config-toggle" type="button" aria-pressed="false" title="Toggle hardware burden"><span class="toggle-thumb"></span></button>
+        <span class="muted" id="hardwareBurdenMsg"></span>
       </span>
       <span class="pill" id="iface1ModeWrap">
         Mode:
@@ -232,58 +282,14 @@
       </span>
       <span class="pill hidden" id="iface1HostPortWrapTop">
         <span id="iface1HostPortLabel">Host Port:</span>
-        <input id="iface1HostPortInput" value="10001" style="width:88px;" />
-      </span>
-      <span style="display:none;">
-        <input id="iface1PortInput" value="10001" />
-        <button id="iface1DiscoverBtn" type="button"></button>
-        <span id="iface1PortWrapTop"></span>
-        <span id="iface1PortLabel"></span>
+        <input id="iface1HostPortInput" value="10001" style="width:72px;" />
       </span>
       <span class="muted modeMsg" id="modeMsg"></span>
-    </div>
-
-    <div style="margin-top:10px;">
-      <p style="margin:0 0 8px 0;"><b>Status</b></p>
-      <div class="row">
-        <span id="statusSerial" class="status-pill status-bad">Serial: Closed</span>
-        <span id="statusSim" class="status-pill status-bad">C-Bus Link: Off</span>
-        <span id="statusVoltage" class="status-pill status-bad">C-Bus Voltage: --.-V</span>
-      </div>
-    </div>
-
-    <div style="margin-top:12px;" id="iface1StatsBox">
-      <p><b>Client:</b> <span id="clientRemote">-</span> (since <span id="clientSince">-</span>)</p>
-      <p><b>Bytes:</b> <span id="bytesLabelA">Serial→TCP</span> <span id="bST">0</span> | <span id="bytesLabelB">TCP→Serial</span> <span id="bTS">0</span></p>
-      <p><b>Last RX:</b> <span id="lastRxLabelA">Serial</span> <span id="lastSRx">-</span> | <span id="lastRxLabelB">TCP</span> <span id="lastTRx">-</span></p>
-      <p><b>Uptime:</b> <span id="uptime">-</span></p>
-      <p><b>Last error:</b> <span id="lastErr">-</span></p>
-      <div class="row" style="margin-top:8px; justify-content: space-between;">
-        <span class="pill" id="iface1PortWrap">
-          Serial Port:
-          <button id="portToggleBtn" class="config-toggle" type="button" aria-pressed="false" title="Toggle serial port"><span class="toggle-thumb"></span></button>
-          <button id="portResetBtn" type="button">Reset</button>
-          <span class="muted" id="portMsg"></span>
-        </span>
-        <span class="pill" id="iface1SimWrap">
-          C-Bus Link:
-          <button id="simToggleBtn" class="config-toggle" type="button" aria-pressed="false" title="Toggle C-Bus link"><span class="toggle-thumb"></span></button>
-          <span class="muted" id="simMsg"></span>
-        </span>
-        <span class="pill hidden" id="hardwareBurdenWrap">
-          Hardware Burden:
-          <button id="hardwareBurdenToggleBtn" class="config-toggle" type="button" aria-pressed="false" title="Toggle hardware burden"><span class="toggle-thumb"></span></button>
-          <span class="muted" id="hardwareBurdenMsg"></span>
-        </span>
-        <span style="flex:1;"></span>
-        <span style="display:flex; gap:8px; align-items:center;">
-          <button id="ifaceSaveBtn" type="button">Save</button>
-        </span>
       </div>
     </div>
 
     <div id="iface2Card" style="display:none !important; margin-top:12px;">
-    <p style="margin:0 0 8px 0;"><b>Interface 2</b></p>
+    <p style="margin:0 0 8px 0;"><b>C-Bus Interface 2</b></p>
     <div class="row">
       <span class="pill">
         Type:
@@ -312,10 +318,10 @@
     </div>
 
     <div style="margin-top:10px;">
-      <p style="margin:0 0 8px 0;"><b>Status</b></p>
+      <p style="margin:0 0 8px 0;"><b>Status:</b></p>
       <div class="row">
         <span id="statusSerial2" class="status-pill status-bad">Serial: Closed</span>
-        <span id="statusSim2" class="status-pill status-bad hidden">C-Bus Link: Off</span>
+        <span id="statusSim2" class="status-pill status-bad hidden">Network Connection: Disabled</span>
       </div>
     </div>
 
@@ -332,8 +338,8 @@
           <span class="muted" id="port2Msg"></span>
         </span>
         <span class="pill" id="iface2SimWrap">
-          C-Bus Link:
-          <button id="sim2ToggleBtn" class="config-toggle" type="button" aria-pressed="false" title="Toggle C-Bus link"><span class="toggle-thumb"></span></button>
+          Network Connection:
+          <button id="sim2ToggleBtn" class="config-toggle" type="button" aria-pressed="false" title="Toggle network connection"><span class="toggle-thumb"></span></button>
           <span class="muted" id="sim2Msg"></span>
         </span>
         <span style="flex:1;"></span>
@@ -355,7 +361,7 @@
           <table>
             <thead>
               <tr>
-                <th>Enabled</th>
+                <th>Enable</th>
                 <th>Type</th>
                 <th>App</th>
                 <th>Name</th>
@@ -377,7 +383,11 @@
       <div class="row" style="justify-content: space-between;">
         <p style="margin:0;"><b>MQTT Broker</b></p>
       </div>
-      <div class="row" style="margin-bottom:6px;">
+      <div class="row" style="margin-top:10px;">
+        <p style="margin:0;"><b>Status:</b></p>
+        <span id="statusMqtt" class="status-pill status-bad">MQTT: Disconnected</span>
+      </div>
+      <div class="row" style="margin-top:10px; margin-bottom:6px;">
         <span>IP:</span>
         <input id="mqttHost" placeholder="Host" style="min-width:180px;" />
         <span>Port:</span>
@@ -397,14 +407,7 @@
         </span>
         <span style="flex:1;"></span>
         <span class="muted" id="mqttMsg"></span>
-      </div>
-      <div style="margin-top:10px;">
-        <p style="margin:0 0 8px 0;"><b>Status</b></p>
-        <div class="row" style="justify-content: space-between;">
-          <span id="statusMqtt" class="status-pill status-bad">MQTT: Disconnected</span>
-          <span style="flex:1;"></span>
-          <button id="mqttSaveBtn" type="button">Save</button>
-        </div>
+        <button id="mqttSaveBtn" type="button">Save</button>
       </div>
     </div>
 
@@ -416,20 +419,25 @@
         <label><input id="timeEnabled" type="checkbox" /> Enable</label>
         <label><input id="timeSendTime" type="checkbox" /> Send Time</label>
         <label><input id="timeSendDate" type="checkbox" /> Send Date</label>
-        <label>Mode
+        <label>Mode:
           <select id="timeMode">
-            <option value="daily">daily</option>
-            <option value="interval">interval</option>
-            <option value="none">none</option>
+            <option value="daily">Daily</option>
+            <option value="interval">Interval</option>
           </select>
         </label>
-        <span>Time</span>
-        <input id="timeDaily" placeholder="02:00" class="small" />
-        <span>Interval</span>
-        <input id="timeInterval" placeholder="60mins" class="small" />
-      </div>
-      <div class="row" style="margin-top:8px;">
-        <span class="muted">No-go zone 11:50PM–12:10AM. If scheduled during this window, it will send at 12:11AM.</span>
+        <span id="timeDailyWrap" class="row">
+          <span>Time:</span>
+          <input id="timeDaily" placeholder="12:11" class="time-field" inputmode="numeric" />
+          <select id="timeAmPm" class="time-period">
+            <option value="AM">AM</option>
+            <option value="PM">PM</option>
+          </select>
+        </span>
+        <span id="timeIntervalWrap" class="row hidden">
+          <span>Interval:</span>
+          <input id="timeInterval" placeholder="60" class="time-interval" inputmode="numeric" />
+          <span>mins</span>
+        </span>
         <span style="flex:1;"></span>
         <span class="muted" id="timeMsg"></span>
         <button id="timeNowBtn" type="button">Set Now</button>
@@ -475,6 +483,14 @@
       </div>
     </dialog>
 
+    <dialog id="modeConfirmDialog">
+      <p id="modeConfirmText" style="margin-top:0;">Confirm mode change.</p>
+      <div class="row" style="justify-content:flex-end; margin-top:12px;">
+        <button id="modeConfirmBtn" type="button">Confirm</button>
+        <button id="modeCancelBtn" type="button">Cancel</button>
+      </div>
+    </dialog>
+
   </div>
   </div>
   </div>
@@ -516,6 +532,10 @@
   let cniDiscoverTarget = 1;
   let coreDirty = false;
   let pendingNavHref = '';
+  let currentMode = 'control';
+  let pendingMode = '';
+  let suppressModeChange = false;
+  let savedDailyTime = '02:00';
 
   function fmtNum(n){
     try { return Number(n ?? 0).toLocaleString(); } catch { return String(n ?? 0); }
@@ -563,6 +583,7 @@
       || isDirty('timeSendDate')
       || isDirty('timeMode')
       || isDirty('timeDaily')
+      || isDirty('timeAmPm')
       || isDirty('timeInterval')
       || isDirty('mqttHost')
       || isDirty('mqttPort')
@@ -570,8 +591,7 @@
       || isDirty('mqttPass')
       || isDirty('serialDeviceInput')
       || isDirty('iface1PortInput')
-      || isDirty('iface1HostPortInput')
-      || isDirty('modeSel');
+      || isDirty('iface1HostPortInput');
   }
 
   function openUnsavedDialog(href){
@@ -588,6 +608,37 @@
     if (typeof dlg.close === 'function') dlg.close();
     else dlg.removeAttribute('open');
     pendingNavHref = '';
+  }
+
+  function modeDisplayName(mode){
+    return mode === 'interface' ? 'Interface' : 'Control';
+  }
+
+  function openModeConfirmDialog(mode){
+    pendingMode = mode || 'control';
+    const text = document.getElementById('modeConfirmText');
+    if (text) text.textContent = 'Confirm change to ' + modeDisplayName(pendingMode) + ' mode.';
+    const dlg = document.getElementById('modeConfirmDialog');
+    if (!dlg) return;
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else dlg.setAttribute('open', 'open');
+  }
+
+  function closeModeConfirmDialog(){
+    const dlg = document.getElementById('modeConfirmDialog');
+    if (!dlg) return;
+    if (typeof dlg.close === 'function') dlg.close();
+    else dlg.removeAttribute('open');
+  }
+
+  function restoreModeSelection(){
+    const sel = document.getElementById('modeSel');
+    suppressModeChange = true;
+    if (sel) sel.value = currentMode || 'control';
+    suppressModeChange = false;
+    clearDirty(sel);
+    updateIface1ModeUi(currentMode || 'control');
+    pendingMode = '';
   }
 
   function flashSuccess(msgEl, text, ms = 3000){
@@ -621,6 +672,70 @@
     btn.disabled = !!disabled;
   }
 
+  function syncTimeModeUi(){
+    const mode = document.getElementById('timeMode')?.value || 'daily';
+    setHidden('timeDailyWrap', mode !== 'daily');
+    setHidden('timeIntervalWrap', mode !== 'interval');
+  }
+
+  function normalize12HourTime(value){
+    const raw = (value || '').trim();
+    const match = raw.match(/^(\d{1,2})(?::(\d{1,2}))?$/);
+    if (!match) throw new Error('Time must be 12-hour format.');
+    const hour = Number(match[1]);
+    const minute = match[2] === undefined ? 0 : Number(match[2]);
+    if (!Number.isInteger(hour) || hour < 1 || hour > 12 || !Number.isInteger(minute) || minute < 0 || minute > 59)
+      throw new Error('Time must be 12-hour format.');
+    return { hour, minute };
+  }
+
+  function to24HourTime(time12, period){
+    let hour = time12.hour % 12;
+    if ((period || 'AM') === 'PM') hour += 12;
+    return `${String(hour).padStart(2, '0')}:${String(time12.minute).padStart(2, '0')}`;
+  }
+
+  function parse24HourTime(value){
+    const match = (value || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+    let hour24 = match ? Number(match[1]) : 2;
+    let minute = match ? Number(match[2]) : 0;
+    if (!Number.isInteger(hour24) || hour24 < 0 || hour24 > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59){
+      hour24 = 2;
+      minute = 0;
+    }
+    const period = hour24 >= 12 ? 'PM' : 'AM';
+    const hour12 = hour24 % 12 || 12;
+    return { hour: hour12, minute, period };
+  }
+
+  function isNoGoTime(hhmm){
+    const [hour, minute] = hhmm.split(':').map(Number);
+    const mins = (hour * 60) + minute;
+    return mins >= ((23 * 60) + 50) || mins <= 10;
+  }
+
+  function setDailyTimeFrom24(value){
+    const parsed = parse24HourTime(value);
+    const timeEl = document.getElementById('timeDaily');
+    const periodEl = document.getElementById('timeAmPm');
+    if (timeEl) timeEl.value = `${parsed.hour}:${String(parsed.minute).padStart(2, '0')}`;
+    if (periodEl) periodEl.value = parsed.period;
+  }
+
+  function getDailyTimeForSave(){
+    const timeEl = document.getElementById('timeDaily');
+    const periodEl = document.getElementById('timeAmPm');
+    const time12 = normalize12HourTime(timeEl?.value || '');
+    let hhmm = to24HourTime(time12, periodEl?.value || 'AM');
+    if (isNoGoTime(hhmm)){
+      hhmm = '00:11';
+      setDailyTimeFrom24(hhmm);
+    } else if (timeEl) {
+      timeEl.value = `${time12.hour}:${String(time12.minute).padStart(2, '0')}`;
+    }
+    return hhmm;
+  }
+
   async function loadTimeConfig(){
     try{
       const r = await fetch('/config/time', { cache: 'no-store' });
@@ -629,9 +744,13 @@
       setChecked(document.getElementById('timeEnabled'), !!c.enabled);
       setChecked(document.getElementById('timeSendTime'), c.sendTime !== false);
       setChecked(document.getElementById('timeSendDate'), c.sendDate !== false);
-      setSelectValue(document.getElementById('timeMode'), c.scheduleMode || 'daily');
-      setInputValue(document.getElementById('timeDaily'), c.dailyTime || '02:00');
+      const scheduleMode = c.scheduleMode === 'interval' ? 'interval' : 'daily';
+      setSelectValue(document.getElementById('timeMode'), scheduleMode);
+      const dailyTime = isNoGoTime(c.dailyTime || '02:00') ? '00:11' : (c.dailyTime || '02:00');
+      savedDailyTime = dailyTime;
+      setDailyTimeFrom24(dailyTime);
       setInputValue(document.getElementById('timeInterval'), c.intervalMins ?? 60);
+      syncTimeModeUi();
     }catch(e){
       document.getElementById('timeMsg').textContent = 'ERR: ' + (e?.message ?? e);
     }
@@ -641,12 +760,24 @@
     const btn = ev?.currentTarget;
     const msg = document.getElementById('timeMsg');
     if (msg) msg.textContent = '';
+    const scheduleMode = document.getElementById('timeMode').value;
+    let dailyTime = '00:11';
+    if (scheduleMode === 'daily'){
+      try{
+        dailyTime = getDailyTimeForSave();
+      }catch(e){
+        if (msg) msg.textContent = 'ERR: ' + (e?.message ?? e);
+        return false;
+      }
+    } else {
+      dailyTime = savedDailyTime || '02:00';
+    }
     const body = {
       enabled: document.getElementById('timeEnabled').checked,
       sendTime: document.getElementById('timeSendTime').checked,
       sendDate: document.getElementById('timeSendDate').checked,
-      scheduleMode: document.getElementById('timeMode').value,
-      dailyTime: document.getElementById('timeDaily').value.trim(),
+      scheduleMode,
+      dailyTime,
       intervalMins: Number(document.getElementById('timeInterval').value || 60)
     };
     try{
@@ -661,7 +792,9 @@
       clearDirty(document.getElementById('timeSendDate'));
       clearDirty(document.getElementById('timeMode'));
       clearDirty(document.getElementById('timeDaily'));
+      clearDirty(document.getElementById('timeAmPm'));
       clearDirty(document.getElementById('timeInterval'));
+      savedDailyTime = dailyTime;
       flashButtonSuccess(btn);
       return true;
     }catch(e){
@@ -729,8 +862,8 @@
         <td><input class="coreEnabled" type="checkbox" ${enabled ? 'checked' : ''} /></td>
         <td>
           <select class="coreType">
-            <option value="lighting" ${type === 'lighting' ? 'selected' : ''}>lighting</option>
-            <option value="measurement" ${type === 'measurement' ? 'selected' : ''}>measurement</option>
+            <option value="lighting" ${type === 'lighting' ? 'selected' : ''}>Lighting</option>
+            <option value="measurement" ${type === 'measurement' ? 'selected' : ''}>Measurement</option>
           </select>
         </td>
         <td><select class="coreApp small">${appOptions}</select></td>
@@ -871,7 +1004,21 @@
   wireDirty('timeSendDate', 'change');
   wireDirty('timeMode', 'change');
   wireDirty('timeDaily');
+  wireDirty('timeAmPm', 'change');
   wireDirty('timeInterval');
+  document.getElementById('timeMode')?.addEventListener('change', syncTimeModeUi);
+  document.getElementById('timeDaily')?.addEventListener('blur', () => {
+    const msg = document.getElementById('timeMsg');
+    try{
+      getDailyTimeForSave();
+      if (msg && (msg.textContent || '').startsWith('ERR: Time must be')) msg.textContent = '';
+    }catch(e){
+      if (msg) msg.textContent = 'ERR: ' + (e?.message ?? e);
+    }
+  });
+  document.getElementById('timeAmPm')?.addEventListener('change', () => {
+    try { getDailyTimeForSave(); } catch { }
+  });
   const timeNowBtn = document.getElementById('timeNowBtn');
   if (timeNowBtn) timeNowBtn.addEventListener('click', async () => {
     const msg = document.getElementById('timeMsg');
@@ -1306,8 +1453,8 @@
     }
   }
 
-  async function saveInterfaces(){
-    const mode = document.getElementById('modeSel')?.value || 'control';
+  async function saveInterfaces(modeOverride = ''){
+    const mode = modeOverride || document.getElementById('modeSel')?.value || 'control';
     let i1Type = 'sim';
     const i2Type = document.getElementById('iface2Type')?.value || 'pci';
     const i1DevInput = document.getElementById('serialDeviceInput')?.value?.trim() || '';
@@ -1489,7 +1636,7 @@
       setHidden('statusSim', !simVisible);
       setHidden('iface1SimWrap', !simVisible);
       if (simVisible) {
-        setStatusPill(document.getElementById('statusSim'), !!s.simOn, 'C-Bus Link: ' + (s.simOn ? 'On' : 'Off'));
+        setStatusPill(document.getElementById('statusSim'), !!s.simOn, 'Network Connection: ' + (s.simOn ? 'Enabled' : 'Disabled'));
         setConfigToggle(document.getElementById('simToggleBtn'), !!s.simOn);
       }
       const hardwareBurdenAvailable = !!s.hardwareBurdenAvailable;
@@ -1551,13 +1698,14 @@
       setHidden('statusSim2', !sim2Visible);
       setHidden('iface2SimWrap', !sim2Visible);
       if (sim2Visible) {
-        setStatusPill(document.getElementById('statusSim2'), !!s2.simOn, 'C-Bus Link: ' + (s2.simOn ? 'On' : 'Off'));
+        setStatusPill(document.getElementById('statusSim2'), !!s2.simOn, 'Network Connection: ' + (s2.simOn ? 'Enabled' : 'Disabled'));
         setConfigToggle(document.getElementById('sim2ToggleBtn'), !!s2.simOn);
       }
 
       // Mode
       const sel = document.getElementById('modeSel');
-      if (sel && s.mode) setSelectValue(sel, s.mode);
+      if (s.mode) currentMode = s.mode;
+      if (sel && s.mode && !pendingMode) setSelectValue(sel, s.mode);
       updateIface1TypeUi(document.getElementById('iface1Type')?.value || 'sim');
       updateIface1ModeUi(sel ? sel.value : (s.mode || 'interface'));
       updateBytesLabels(s);
@@ -1660,10 +1808,20 @@
 
 
   document.getElementById('modeSel').addEventListener('change', (e) => {
-    updateIface1ModeUi(e.target.value);
+    if (suppressModeChange) return;
+    const selectedMode = e.target.value || 'control';
+    if (selectedMode === currentMode) {
+      updateIface1ModeUi(currentMode || 'control');
+      return;
+    }
+    openModeConfirmDialog(selectedMode);
+    suppressModeChange = true;
+    e.target.value = currentMode || 'control';
+    suppressModeChange = false;
+    updateIface1ModeUi(currentMode || 'control');
   });
 
-  // Serial Port, C-Bus Link and hardware burden controls
+  // Serial Port, network connection and hardware burden controls
   document.getElementById('portToggleBtn').addEventListener('click', (e) =>
     postToggle(e.currentTarget, '/control/port/enable', '/control/port/disable', document.getElementById('portMsg'))
   );
@@ -1729,7 +1887,7 @@
     const btn = ev?.currentTarget;
     const msg = document.getElementById('modeMsg');
     msg.textContent = '';
-    const mode = document.getElementById('modeSel').value;
+    const mode = pendingMode || document.getElementById('modeSel').value;
     try{
       const r = await fetch('/config/mode', {
         method: 'POST',
@@ -1739,10 +1897,18 @@
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
       clearDirty(document.getElementById('modeSel'));
-      await saveInterfaces();
+      await saveInterfaces(mode);
       if (mode === 'control'){
         try { await fetch('/control/port/enable', { method: 'POST' }); } catch { }
       }
+      currentMode = mode;
+      pendingMode = '';
+      suppressModeChange = true;
+      const sel = document.getElementById('modeSel');
+      if (sel) sel.value = mode;
+      suppressModeChange = false;
+      updateIface1ModeUi(mode);
+      closeModeConfirmDialog();
       flashButtonSuccess(btn);
       return true;
     } catch(e){
@@ -1751,12 +1917,21 @@
     }
   }
 
-  document.getElementById('ifaceSaveBtn').addEventListener('click', saveModeAndInterfaces);
-  document.getElementById('ifaceSaveBtn2').addEventListener('click', saveModeAndInterfaces);
+  document.getElementById('modeConfirmBtn').addEventListener('click', saveModeAndInterfaces);
+  document.getElementById('modeCancelBtn').addEventListener('click', () => {
+    closeModeConfirmDialog();
+    restoreModeSelection();
+  });
+  document.getElementById('modeConfirmDialog').addEventListener('cancel', (e) => {
+    e.preventDefault();
+    closeModeConfirmDialog();
+    restoreModeSelection();
+  });
+  const ifaceSaveBtn2 = document.getElementById('ifaceSaveBtn2');
+  if (ifaceSaveBtn2) ifaceSaveBtn2.addEventListener('click', saveModeAndInterfaces);
   wireDirty('serialDeviceInput');
   wireDirty('iface1PortInput');
   wireDirty('iface1HostPortInput');
-  wireDirty('modeSel', 'change');
   wireDirty('iface2Type', 'change');
   wireDirty('iface2DeviceInput');
   wireDirty('iface2PortInput');
@@ -1771,7 +1946,7 @@
   });
 
   async function saveAllDirtyConfig(){
-    if ((isDirty('serialDeviceInput') || isDirty('iface1PortInput') || isDirty('iface1HostPortInput') || isDirty('modeSel'))){
+    if ((isDirty('serialDeviceInput') || isDirty('iface1PortInput') || isDirty('iface1HostPortInput'))){
       const ok = await saveModeAndInterfaces({ currentTarget: document.getElementById('unsavedSaveBtn') });
       if (!ok) return false;
     }
@@ -1779,7 +1954,7 @@
       const ok = await saveMqttConfig({ currentTarget: document.getElementById('unsavedSaveBtn') });
       if (!ok) return false;
     }
-    if (isDirty('timeEnabled') || isDirty('timeSendTime') || isDirty('timeSendDate') || isDirty('timeMode') || isDirty('timeDaily') || isDirty('timeInterval')){
+    if (isDirty('timeEnabled') || isDirty('timeSendTime') || isDirty('timeSendDate') || isDirty('timeMode') || isDirty('timeDaily') || isDirty('timeAmPm') || isDirty('timeInterval')){
       const ok = await saveTimeConfig({ currentTarget: document.getElementById('unsavedSaveBtn') });
       if (!ok) return false;
     }
