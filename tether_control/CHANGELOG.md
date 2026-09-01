@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.0 - 2026-09-01
+- Added Area & Scene Setup for creating custom Area Addresses and C-Bus scenes from Tether Control.
+- Added Trigger Control support for firing C-Bus trigger groups from Home Assistant.
+
 ## 2.1.2 - 2026-08-25
 - Improved the Configuration page layout for a cleaner, more concise setup view.
 - Improved C-Bus Interface controls and mode-change confirmation.

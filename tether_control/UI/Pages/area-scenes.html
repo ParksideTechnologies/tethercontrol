@@ -1,0 +1,1273 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="/favicon.ico" />
+  <title>Area &amp; Scene Setup - Tether Control</title>
+  <style>
+    :root {
+      --page-width: 1280px;
+      --bg: #eaf5ff;
+      --card: #f8fcff;
+      --line: #bfd8ea;
+      --ink: #173247;
+      --muted: #5e7b92;
+      --accent: #3b87c8;
+      --accent-2: #66b3e6;
+      --nav-bg: #e2eef8;
+      --ok-bg: #d9f2da;
+      --ok-line: #5f9f68;
+      --bad-bg: #f8ddd7;
+      --bad-line: #c56b56;
+      --dialog-backdrop: rgba(23, 50, 71, 0.42);
+    }
+    body { font-family: "Segoe UI", Tahoma, sans-serif; margin: 0; overflow-x: auto; color: var(--ink); background: #ffffff; }
+    body.dialog-open { overflow: hidden; }
+    .page { width: var(--page-width); min-width: var(--page-width); max-width: var(--page-width); margin: 24px auto; }
+    .banner { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; padding: 10px 16px; border-radius: 14px; font-weight: 600; display:flex; justify-content:space-between; align-items:center; }
+    .nav { display:flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 12px 0; }
+    .nav a { text-decoration: none; }
+    .nav .navBtn, button { display:inline-block; padding: 4px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--nav-bg); color: var(--ink); cursor: pointer; font: inherit; transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease; }
+    .nav .navBtn:hover, button:hover { background: #d8ecfb; border-color: var(--accent); }
+    button:active { transform: translateY(1px); }
+    button.btn-flash-ok { background: var(--ok-bg); border-color: var(--ok-line); color: #1f5e33; }
+    th.sortable { cursor:pointer; user-select:none; }
+    th.sortable.sorted-asc::after { content:" ▲"; font-size:0.85em; color:#555; }
+    th.sortable.sorted-desc::after { content:" ▼"; font-size:0.85em; color:#555; }
+    input, select { border: 1px solid var(--line); border-radius: 10px; background: white; color: var(--ink); padding: 4px 8px; font: inherit; box-sizing: border-box; }
+    .page-title-row { position:relative; min-height:42px; display:flex; align-items:center; margin: 0 0 16px; }
+    .page-title-row h1 { margin:0; }
+    .licence-warning { position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); color:var(--ink); background:var(--bad-bg); border:1px solid var(--bad-line); border-radius:999px; padding:4px 14px; font-weight:800; font-size:20px; text-align:center; white-space:nowrap; }
+    .licence-warning.hidden { display:none; }
+    .section-box { margin-bottom:18px; }
+    .section-box:last-child { margin-bottom:0; }
+    .section-title { margin:0 0 8px 0; font-size:1.05em; font-weight:700; }
+    .section-panel { width:100%; box-sizing:border-box; padding:18px; border:1px solid var(--line); border-radius:18px; background:color-mix(in srgb, var(--card) 96%, white); }
+    .area-card { width:100%; box-sizing:border-box; padding:12px 0 0; border-top:1px solid #dceaf5; }
+    .area-card:first-child { border-top:0; padding-top:0; }
+    .area-card + .area-card { margin-top:14px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .muted { color: var(--muted); font-size: 0.95em; }
+    .parent-grid { display:grid; grid-template-columns: minmax(300px, 1fr) minmax(120px, 0.6fr) 150px 160px 54px 88px 92px; gap:10px; align-items:end; }
+    .parent-name { grid-column:1 / 3; }
+    .trigger-group-field, .parent-app-field { grid-column:3; grid-row:1; }
+    .action-selector-field, .parent-group-field { grid-column:4; grid-row:1; }
+    .parent-fire { grid-column:5; }
+    .parent-remove { grid-column:6; }
+    .parent-collapse { grid-column:7; }
+    .parent-grid label { display:block; font-size:1em; color:var(--ink); font-weight:600; margin:0 0 3px; }
+    .child-table label { display:block; font-size:0.82em; color:var(--muted); margin:0 0 3px; }
+    .parent-grid input, .parent-grid select { width:100%; }
+    .parent-field.hidden { display:none; }
+    .child-wrap { margin-top:14px; padding:12px; border:1px solid #dceaf5; border-radius:14px; background:color-mix(in srgb, var(--card) 96%, white); }
+    .child-table { width:100%; border-collapse:collapse; table-layout:fixed; }
+    .child-table th, .child-table td { border-bottom:1px solid #dceaf5; padding:6px; text-align:left; vertical-align:bottom; }
+    .child-table th { font-weight:600; }
+    .child-table col.name { width:auto; }
+    .child-table col.app { width:112px; }
+    .child-table col.group, .child-table col.percent, .child-table col.level { width:90px; }
+    .child-table col.ramp { width:130px; }
+    .child-table col.remove { width:88px; }
+    .trigger-control-table { width:100%; border-collapse:collapse; table-layout:fixed; }
+    .trigger-control-table th, .trigger-control-table td { border-bottom:1px solid #dceaf5; padding:6px; text-align:left; vertical-align:bottom; }
+    .trigger-control-table th { font-weight:600; }
+    .trigger-control-table col.name { width:auto; }
+    .trigger-control-table col.group { width:150px; }
+    .trigger-control-table col.action { width:170px; }
+    .trigger-control-table col.fire { width:58px; }
+    .trigger-control-table col.remove { width:88px; }
+    .trigger-control-table input.triggerControlName,
+    .trigger-control-table input.triggerControlGroup,
+    .trigger-control-table input.triggerControlAction { width:100%; box-sizing:border-box; }
+    .child-name { width:100%; }
+    .autocomplete-wrap { position:relative; width:100%; }
+    .autocomplete-wrap .childName { position:relative; z-index:2; background:white; }
+    .autocomplete-ghost { position:absolute; z-index:3; left:9px; right:9px; top:50%; transform:translateY(-50%); white-space:pre; overflow:hidden; pointer-events:none; font:inherit; line-height:1; color:#89a9bf; }
+    .autocomplete-prefix { color:transparent; }
+    .autocomplete-suffix { color:#fff; background:#3b87c8; border-radius:2px; }
+    .small { width:70px; }
+    .childApp, #bulkParentApp { width:100px; box-sizing:border-box; }
+    .ramp { width:118px; }
+    .sync-options { display:inline-flex; align-items:center; gap:12px; }
+    .sync-options label { display:inline-flex; align-items:center; gap:6px; font-size:0.95em; color:var(--ink); }
+    .sync-options.hidden { visibility:hidden; }
+    .bulk-controls-table { width:100%; border-collapse:collapse; table-layout:fixed; margin-top:10px; }
+    .bulk-controls-table th, .bulk-controls-table td { border-bottom:1px solid #dceaf5; padding:6px; text-align:left; vertical-align:middle; }
+    .bulk-controls-table th { font-weight:600; }
+    .bulk-controls-table col.use { width:70px; }
+    .bulk-controls-table col.app { width:112px; }
+    .bulk-controls-table col.group { width:90px; }
+    .bulk-controls-table col.status { width:120px; }
+    .bulk-controls-table input[type="checkbox"] { width:auto; }
+    .bulk-controls-body-wrap { max-height:55vh; overflow:auto; border:1px solid #dceaf5; border-radius:12px; background:white; }
+    .scene-only.hidden { display:none; }
+    .triggerCellWrap { display:inline-flex; align-items:center; gap:12px; position:relative; justify-content:center; width:100%; }
+    .triggerBtn {
+      width:42px; height:26px; padding:0; border-radius:999px; display:inline-flex; align-items:center; justify-content:flex-start;
+      border:1px solid #aac8dd; background:linear-gradient(180deg, #d7e9f7, #c8deef); box-shadow:inset 0 1px 2px rgba(255,255,255,0.7);
+    }
+    .triggerBtn:hover { background:linear-gradient(180deg, #d0e6f8, #bdd9ed); border-color:#82add0; }
+    .triggerBtn.is-on { background:linear-gradient(180deg, #8bd49c, #67be7e); border-color:#4e9f65; }
+    .triggerBtn .toggle-thumb { width:20px; height:20px; border-radius:50%; margin-left:2px; background:linear-gradient(180deg, #ffffff, #eaf2f8); border:1px solid rgba(111,139,160,0.45); box-shadow:0 1px 2px rgba(23,50,71,0.22); transition:transform 0.18s ease; pointer-events:none; }
+    .triggerBtn.is-on .toggle-thumb { transform:translateX(16px); }
+    .collapseBtn { width:92px; padding:4px 0; }
+    .area-card.collapsed .child-wrap { display:none; }
+    .msg { margin-left:10px; }
+    dialog { border:1px solid var(--line); border-radius:18px; padding:14px; background:color-mix(in srgb, var(--card) 97%, white); color:var(--ink); min-width:420px; max-width:95vw; }
+    dialog::backdrop { background:var(--dialog-backdrop); }
+    .dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="banner"><span>Tether Control</span><span>{{APP_VERSION}}</span></div>
+    <div class="nav">
+      <a class="navBtn" href="/">Configuration</a>
+      <a class="navBtn" href="/controls">Group Address Setup</a>
+      <a class="navBtn" href="/area-scenes">Area &amp; Scene Setup</a>
+      <a class="navBtn" href="/tools">Tools</a>
+      <a class="navBtn" href="/help">Help</a>
+    </div>
+    <div class="page-title-row">
+      <h1>Area &amp; Scene Setup</h1>
+      <span id="licenceWarning" class="licence-warning hidden">Failure: Licence key is invalid.</span>
+    </div>
+    <div id="areaSceneSections">
+      <div class="section-box" data-section-mode="area">
+        <p class="section-title">Area Addresses</p>
+        <div class="section-panel">
+          <div id="areaAddressList"></div>
+          <div class="row" style="margin-top:10px; justify-content:flex-end;">
+            <span class="muted sectionSaveMsg"></span>
+            <button class="addParentBtn" data-mode="area" type="button">Add Area Address</button>
+            <button class="bulkParentBtn" data-mode="area" type="button">Bulk Add</button>
+            <button class="saveAreaBtn" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+      <div class="section-box" data-section-mode="trigger">
+        <p class="section-title">Trigger Control</p>
+        <div class="section-panel">
+          <table class="trigger-control-table">
+            <colgroup>
+              <col class="name" />
+              <col class="group" />
+              <col class="action" />
+              <col class="fire" />
+              <col class="remove" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Entity Name</th>
+                <th>Trigger Group</th>
+                <th>Action Selector</th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="triggerControlBody"></tbody>
+          </table>
+          <div class="row" style="margin-top:10px; justify-content:flex-end;">
+            <span class="muted" id="triggerControlSaveMsg"></span>
+            <button id="addTriggerControlBtn" type="button">Add Trigger</button>
+            <button id="bulkTriggerControlBtn" type="button">Bulk Add</button>
+            <button id="saveTriggerControlBtn" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+      <div class="section-box" data-section-mode="scene">
+        <p class="section-title">Scenes</p>
+        <div class="section-panel">
+          <div id="sceneList"></div>
+          <div class="row" style="margin-top:10px; justify-content:flex-end;">
+            <span class="muted sectionSaveMsg"></span>
+            <button class="addParentBtn" data-mode="scene" type="button">Add Scene</button>
+            <button class="bulkParentBtn" data-mode="scene" type="button">Bulk Add</button>
+            <button class="saveAreaBtn" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="removeDialog">
+    <h3 style="margin:0 0 10px 0;">Remove Entry</h3>
+    <p style="margin:0;">Remove this entry?</p>
+    <div class="dialog-actions">
+      <button id="removeNoBtn" type="button">No</button>
+      <button id="removeYesBtn" type="button">Yes</button>
+    </div>
+  </dialog>
+
+  <dialog id="bulkTriggerControlDialog">
+    <h3 style="margin:0 0 10px 0;">Bulk Add Trigger Control</h3>
+    <div class="row">
+      <label>Prefix <input id="bulkTriggerControlPrefix" placeholder="Trigger " /></label>
+      <label>Count <input id="bulkTriggerControlCount" class="small" inputmode="numeric" value="1" /></label>
+      <label>Trigger Group Start <input id="bulkTriggerControlStart" class="small" inputmode="numeric" value="0" /></label>
+      <label>Action Selector <input id="bulkTriggerControlAction" class="small" inputmode="numeric" value="0" /></label>
+    </div>
+    <div class="dialog-actions">
+      <button id="bulkTriggerControlCancelBtn" type="button">Cancel</button>
+      <button id="bulkTriggerControlAddBtn" type="button">Add</button>
+    </div>
+  </dialog>
+
+  <dialog id="fieldValidationDialog">
+    <h3 style="margin:0 0 10px 0;">Invalid Value</h3>
+    <p id="fieldValidationText" style="margin:0;"></p>
+    <div class="dialog-actions">
+      <button id="fieldValidationOkBtn" type="button">OK</button>
+    </div>
+  </dialog>
+
+  <dialog id="bulkChildDialog" style="width:900px;">
+    <h3 style="margin:0 0 10px 0;">Bulk Add Group Addresses</h3>
+    <div class="row">
+      <label><input id="bulkChildSelectAll" type="checkbox" checked /> Select All</label>
+    </div>
+    <div class="bulk-controls-body-wrap">
+      <table class="bulk-controls-table">
+        <colgroup>
+          <col class="use" />
+          <col class="name" />
+          <col class="app" />
+          <col class="group" />
+          <col class="status" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Use</th>
+            <th>Entity Name</th>
+            <th>Application</th>
+            <th>Group</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="bulkChildBody"></tbody>
+      </table>
+    </div>
+    <div class="dialog-actions">
+      <button id="bulkChildCancelBtn" type="button">Cancel</button>
+      <button id="bulkChildAddBtn" type="button">Add</button>
+    </div>
+  </dialog>
+
+  <dialog id="bulkParentDialog">
+    <h3 id="bulkParentTitle" style="margin:0 0 10px 0;">Bulk Add</h3>
+    <div class="row">
+      <label>Prefix <input id="bulkParentPrefix" placeholder="Area " /></label>
+      <label>Count <input id="bulkParentCount" class="small" inputmode="numeric" value="1" /></label>
+      <label id="bulkParentAppWrap">Application <input id="bulkParentApp" class="small" inputmode="numeric" value="56" /></label>
+      <label id="bulkParentGroupWrap">Group Start <input id="bulkParentGroupStart" class="small" inputmode="numeric" value="0" /></label>
+      <label id="bulkParentTriggerWrap">Trigger Group Start <input id="bulkParentTriggerStart" class="small" inputmode="numeric" value="0" /></label>
+      <label id="bulkParentActionWrap">Action Selector <input id="bulkParentAction" class="small" inputmode="numeric" value="0" /></label>
+    </div>
+    <div class="dialog-actions">
+      <button id="bulkParentCancelBtn" type="button">Cancel</button>
+      <button id="bulkParentAddBtn" type="button">Add</button>
+    </div>
+  </dialog>
+
+  <dialog id="unsavedDialog">
+    <p style="margin:0 0 10px 0;">Unsaved device configuration will be lost. Save?</p>
+    <div class="dialog-actions">
+      <button id="unsavedSaveBtn" type="button">Save</button>
+      <button id="unsavedContinueBtn" type="button">Continue without saving</button>
+      <button id="unsavedCancelBtn" type="button">Cancel</button>
+    </div>
+  </dialog>
+
+  <script>
+(() => {
+  const APP_VERSION = '{{APP_VERSION}}';
+  let initialAreaScenesBootstrap = {{INITIAL_AREA_SCENES_JSON}};
+  let areas = [];
+  let dirty = false;
+  let pendingRemove = null;
+  let pendingBulkCard = null;
+  let pendingBulkParentMode = '';
+  let pendingNavigationHref = '';
+  let pendingSort = null;
+  let controlSuggestions = [];
+  let controlsConfigSnapshot = [];
+  let triggerControls = [];
+  const childSortState = new Map();
+  const ramps = [
+    ['instant', 'Instant'],
+    ['4s', '4 seconds'],
+    ['8s', '8 seconds'],
+    ['12s', '12 seconds'],
+    ['20s', '20 seconds'],
+    ['30s', '30 seconds'],
+    ['40s', '40 seconds'],
+    ['60s', '1 minute'],
+    ['90s', '1.5 minutes'],
+    ['120s', '2 minutes'],
+    ['180s', '3 minutes'],
+    ['300s', '5 minutes'],
+    ['420s', '7 minutes'],
+    ['600s', '10 minutes'],
+    ['900s', '15 minutes'],
+    ['1020s', '17 minutes']
+  ];
+
+  function escapeHtml(value){
+    return (value ?? '').toString()
+      .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+  }
+
+  function markDirty(){ dirty = true; }
+  function clearDirty(){ dirty = false; }
+  function updateDialogScrollLock(){
+    document.body.classList.toggle('dialog-open', !!document.querySelector('dialog[open]'));
+  }
+  function openDialog(dlg){
+    if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', 'open');
+    updateDialogScrollLock();
+  }
+  function closeDialog(dlg){
+    if (typeof dlg.close === 'function') dlg.close(); else dlg.removeAttribute('open');
+    updateDialogScrollLock();
+  }
+  function pctToLevel(pct){ return Math.round(Math.max(0, Math.min(100, Number(pct) || 0)) / 100 * 255); }
+  function levelToPct(level){ return Math.round(Math.max(0, Math.min(255, Number(level) || 0)) / 255 * 100); }
+  function triggerButtonHtml(mode, isOn){
+    const label = isOn ? 'Turn off' : 'Turn on';
+    return `<button class="triggerBtn ${isOn ? 'is-on' : ''}" type="button" title="${label}" aria-pressed="${isOn ? 'true' : 'false'}"><span class="toggle-thumb"></span></button>`;
+  }
+
+  function rampOptions(selected){
+    const current = (selected || 'instant').toString().toLowerCase();
+    return ramps.map(([value, label]) => `<option value="${value}" ${value === current ? 'selected' : ''}>${label}</option>`).join('');
+  }
+
+  function newArea(mode){
+    return {
+      name: '',
+      mode,
+      triggerGroup: 0,
+      actionSelector: 0,
+      app: 56,
+      group: 0,
+      collapsed: false,
+      syncTarget: false,
+      syncRamp: false,
+      children: []
+    };
+  }
+
+  function newChild(){
+    return { entityName: '', app: '', group: '', targetPercent: 100, targetLevel: 255, ramp: 'instant' };
+  }
+
+  function render(){
+    const areaAddressList = document.getElementById('areaAddressList');
+    const sceneList = document.getElementById('sceneList');
+    areaAddressList.innerHTML = areas
+      .map((area, index) => ({ area, index }))
+      .filter(item => ((item.area.mode || 'scene').toLowerCase() === 'area'))
+      .map(item => areaCardHtml(item.area, item.index))
+      .join('');
+    sceneList.innerHTML = areas
+      .map((area, index) => ({ area, index }))
+      .filter(item => ((item.area.mode || 'scene').toLowerCase() !== 'area'))
+      .map(item => areaCardHtml(item.area, item.index))
+      .join('');
+    syncAllModeVisibility();
+    renderTriggerControls();
+  }
+
+  function triggerControlRowHtml(d){
+    const devName = d?.deviceName || d?.name || '';
+    const group = d?.group ?? '';
+    const actionSelector = d?.actionSelector ?? '';
+    return `
+      <tr>
+        <td><input class="triggerControlName" placeholder="Entity name" value="${escapeHtml(devName)}" /></td>
+        <td><input class="triggerControlGroup small" inputmode="numeric" placeholder="0" value="${escapeHtml(group)}" /></td>
+        <td><input class="triggerControlAction small" inputmode="numeric" placeholder="0" value="${escapeHtml(actionSelector)}" /></td>
+        <td><div class="triggerCellWrap">${triggerButtonHtml('scene', false)}</div></td>
+        <td><button class="removeTriggerControlBtn" type="button">Remove</button></td>
+      </tr>
+    `;
+  }
+
+  function renderTriggerControls(){
+    const body = document.getElementById('triggerControlBody');
+    if (!body) return;
+    body.innerHTML = triggerControls.map(triggerControlRowHtml).join('');
+  }
+
+  function areaCardHtml(area, index){
+    const mode = (area.mode || 'scene').toLowerCase() === 'area' ? 'area' : 'scene';
+    const collapsed = !!area.collapsed;
+    const children = Array.isArray(area.children) ? area.children : [];
+    const sortState = childSortState.get(index) || {};
+    const sortClass = key => sortState.key === key ? (sortState.dir === 1 ? ' sorted-asc' : ' sorted-desc') : '';
+    return `
+      <div class="area-card ${collapsed ? 'collapsed' : ''}" data-index="${index}" data-mode="${mode}">
+        <div class="parent-grid">
+          <div class="parent-name">
+            <label>${mode === 'area' ? 'Area Address Name' : 'Scene Name'}</label>
+            <input class="areaName" placeholder="${mode === 'area' ? 'All Living Lights' : 'Evening Scene'}" value="${escapeHtml(area.name)}" />
+          </div>
+          <div class="parent-field scene-parent trigger-group-field">
+            <label>Trigger Group</label>
+            <input class="triggerGroup" inputmode="numeric" value="${escapeHtml(area.triggerGroup ?? 0)}" />
+          </div>
+          <div class="parent-field scene-parent action-selector-field">
+            <label>Action Selector</label>
+            <input class="actionSelector" inputmode="numeric" value="${escapeHtml(area.actionSelector ?? 0)}" />
+          </div>
+          <div class="parent-field area-parent parent-app-field">
+            <label>Application</label>
+            <input class="parentApp" inputmode="numeric" value="${escapeHtml(area.app ?? 56)}" />
+          </div>
+          <div class="parent-field area-parent parent-group-field">
+            <label>Group</label>
+            <input class="parentGroup" inputmode="numeric" value="${escapeHtml(area.group ?? 0)}" />
+          </div>
+          <div class="parent-fire">${triggerButtonHtml(mode, !!area.isOn)}</div>
+          <div class="parent-remove"><button class="removeAreaBtn" type="button">Remove</button></div>
+          <div class="parent-collapse"><button class="collapseBtn" type="button">${collapsed ? 'Expand' : 'Collapse'}</button></div>
+        </div>
+        <div class="child-wrap">
+          <table class="child-table">
+            <colgroup>
+              <col class="name" />
+              <col class="app" />
+              <col class="group" />
+              <col class="percent scene-only-col" />
+              <col class="level scene-only-col" />
+              <col class="ramp scene-only-col" />
+              <col class="remove" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="sortable child-sort-header${sortClass('entityName')}" data-child-sort="entityName">Entity Name</th>
+                <th class="sortable child-sort-header${sortClass('app')}" data-child-sort="app">Application</th>
+                <th class="sortable child-sort-header${sortClass('group')}" data-child-sort="group">Group</th>
+                <th class="sortable child-sort-header scene-only${sortClass('targetPercent')}" data-child-sort="targetPercent">Target %</th>
+                <th class="sortable child-sort-header scene-only${sortClass('targetLevel')}" data-child-sort="targetLevel">Level</th>
+                <th class="sortable child-sort-header scene-only${sortClass('ramp')}" data-child-sort="ramp">Ramp</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${children.map(child => childRowHtml(child)).join('')}
+            </tbody>
+          </table>
+          <div class="row" style="margin-top:10px; justify-content:flex-end;">
+            <span class="muted areaSaveMsg" style="margin-right:auto;"></span>
+            <span class="sync-options ${mode === 'area' ? 'hidden' : ''}">
+              <label>Sync Target <input class="syncTarget" type="checkbox" ${area.syncTarget ? 'checked' : ''} /></label>
+              <label>Sync Ramp <input class="syncRamp" type="checkbox" ${area.syncRamp ? 'checked' : ''} /></label>
+            </span>
+            <button class="addChildBtn" type="button">Add Group Address</button>
+            <button class="bulkChildBtn" type="button">Bulk Add</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function childRowHtml(child){
+    const percent = Number.isFinite(Number(child.targetPercent)) ? Number(child.targetPercent) : levelToPct(child.targetLevel);
+    const level = Number.isFinite(Number(child.targetLevel)) ? Number(child.targetLevel) : pctToLevel(percent);
+    return `
+      <tr>
+        <td>
+          <div class="autocomplete-wrap">
+            <span class="autocomplete-ghost"></span>
+            <input class="childName child-name" placeholder="Entity name" autocomplete="off" value="${escapeHtml(child.entityName)}" />
+          </div>
+        </td>
+        <td><input class="childApp small" inputmode="numeric" value="${escapeHtml(child.app ?? 56)}" /></td>
+        <td><input class="childGroup small" inputmode="numeric" value="${escapeHtml(child.group ?? 0)}" /></td>
+        <td class="scene-only"><input class="targetPercent small" inputmode="numeric" value="${escapeHtml(percent)}" /></td>
+        <td class="scene-only"><input class="targetLevel small" inputmode="numeric" value="${escapeHtml(level)}" /></td>
+        <td class="scene-only"><select class="ramp">${rampOptions(child.ramp)}</select></td>
+        <td><button class="removeChildBtn" type="button">Remove</button></td>
+      </tr>
+    `;
+  }
+
+  function syncAllModeVisibility(){
+    document.querySelectorAll('.area-card').forEach(card => {
+      const mode = card.dataset.mode || 'scene';
+      const isArea = mode === 'area';
+      card.querySelectorAll('.scene-parent').forEach(el => el.classList.toggle('hidden', isArea));
+      card.querySelectorAll('.area-parent').forEach(el => el.classList.toggle('hidden', !isArea));
+      card.querySelectorAll('.scene-only').forEach(el => el.classList.toggle('hidden', isArea));
+      card.querySelectorAll('.scene-only-col').forEach(el => el.style.display = isArea ? 'none' : '');
+    });
+  }
+
+  function collect(){
+    return Array.from(document.querySelectorAll('.area-card')).map(card => {
+      const mode = card.dataset.mode || 'scene';
+      return {
+        name: card.querySelector('.areaName')?.value?.trim() || '',
+        mode,
+        triggerGroup: Number(card.querySelector('.triggerGroup')?.value || 0),
+        actionSelector: Number(card.querySelector('.actionSelector')?.value || 0),
+        app: Number(card.querySelector('.parentApp')?.value || 56),
+        group: Number(card.querySelector('.parentGroup')?.value || 0),
+        collapsed: card.classList.contains('collapsed'),
+        syncTarget: mode !== 'area' && !!card.querySelector('.syncTarget')?.checked,
+        syncRamp: mode !== 'area' && !!card.querySelector('.syncRamp')?.checked,
+        children: Array.from(card.querySelectorAll('tbody tr')).map(tr => {
+          const percent = Number(tr.querySelector('.targetPercent')?.value || 100);
+          const levelRaw = Number(tr.querySelector('.targetLevel')?.value || pctToLevel(percent));
+          return {
+            entityName: tr.querySelector('.childName')?.value?.trim() || '',
+            app: Number(tr.querySelector('.childApp')?.value || 56),
+            group: Number(tr.querySelector('.childGroup')?.value || 0),
+            targetPercent: Math.max(0, Math.min(100, percent)),
+            targetLevel: Math.max(0, Math.min(255, levelRaw)),
+            ramp: tr.querySelector('.ramp')?.value || 'instant'
+          };
+        })
+      };
+    });
+  }
+
+  function validate(areasToCheck){
+    const parseIntField = (value, name, min, max) => {
+      if (!Number.isInteger(value) || value < min || value > max) throw new Error(`${name} must be from ${min} to ${max}.`);
+    };
+    areasToCheck.forEach((area, index) => {
+      const label = area.name || `Entry ${index + 1}`;
+      if (!area.name.trim()) throw new Error(`${label}: Name is required.`);
+      if (area.mode === 'scene'){
+        parseIntField(area.triggerGroup, `${label} Trigger Group`, 0, 254);
+        parseIntField(area.actionSelector, `${label} Action Selector`, 0, 255);
+      } else {
+        parseIntField(area.app, `${label} Parent Application`, 48, 95);
+        parseIntField(area.group, `${label} Parent Group`, 0, 255);
+      }
+      if (!area.children.length) throw new Error(`${label}: At least one child group is required.`);
+      area.children.forEach((child, childIndex) => {
+        const childLabel = `${label} child ${childIndex + 1}`;
+        parseIntField(child.app, `${childLabel} Application`, 48, 95);
+        parseIntField(child.group, `${childLabel} Group`, 0, 255);
+        if (area.mode === 'area' && child.app === area.app && child.group === area.group)
+          throw new Error(`${label}: Parent group cannot also be a child group.`);
+        if (area.mode === 'scene'){
+          parseIntField(child.targetPercent, `${childLabel} Target %`, 0, 100);
+          parseIntField(child.targetLevel, `${childLabel} Level`, 0, 255);
+        }
+      });
+    });
+  }
+
+  function collectTriggerControls(){
+    const rows = [];
+    document.querySelectorAll('#triggerControlBody tr').forEach(tr => {
+      const deviceName = tr.querySelector('.triggerControlName')?.value?.trim() || '';
+      const groupRaw = tr.querySelector('.triggerControlGroup')?.value ?? '';
+      const actionRaw = tr.querySelector('.triggerControlAction')?.value ?? '';
+      if (![deviceName, groupRaw, actionRaw].some(v => (v ?? '').toString().trim() !== '')) return;
+      const group = Number(groupRaw);
+      const actionSelector = Number(actionRaw);
+      const label = deviceName || 'Trigger Control';
+      if (!Number.isInteger(group) || group < 0 || group > 254)
+        throw new Error(`${label}: Trigger Group must be from 0 to 254.`);
+      if (!Number.isInteger(actionSelector) || actionSelector < 0 || actionSelector > 255)
+        throw new Error(`${label}: Action Selector must be from 0 to 255.`);
+      rows.push({
+        function: 'trigger',
+        name: '',
+        deviceName,
+        deviceType: 'trigger',
+        app: 202,
+        group,
+        actionSelector,
+        invert: false,
+        controlType: 'up_down_off',
+        pulseSeconds: 0.25
+      });
+    });
+    return rows;
+  }
+
+  function showValidation(message){
+    document.getElementById('fieldValidationText').textContent = message;
+    openDialog(document.getElementById('fieldValidationDialog'));
+  }
+
+  function sortChildRowsByIndex(index, key, collectFromDom){
+    if (!Number.isInteger(index)) return;
+    if (collectFromDom) areas = collect();
+    const area = areas[index];
+    if (!area || !Array.isArray(area.children)) return;
+    const current = childSortState.get(index) || {};
+    const dir = current.key === key ? -current.dir : 1;
+    childSortState.set(index, { key, dir });
+    const rampRank = new Map(ramps.map(([value], rampIndex) => [value, rampIndex]));
+    const valueFor = child => {
+      if (key === 'entityName') return (child.entityName || '').toLowerCase();
+      if (key === 'ramp') return rampRank.has(child.ramp) ? rampRank.get(child.ramp) : Number.MAX_SAFE_INTEGER;
+      return Number(child[key] ?? 0);
+    };
+    area.children.sort((a, b) => {
+      const av = valueFor(a);
+      const bv = valueFor(b);
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+    render();
+  }
+
+  function cardSectionIndex(card){
+    const mode = card.dataset.mode || 'scene';
+    return Array.from(document.querySelectorAll(`.area-card[data-mode="${mode}"]`)).indexOf(card);
+  }
+
+  function resolveSectionIndex(mode, sectionIndex){
+    let seen = -1;
+    for (let i = 0; i < areas.length; i++){
+      const itemMode = (areas[i].mode || 'scene').toLowerCase() === 'area' ? 'area' : 'scene';
+      if (itemMode !== mode) continue;
+      seen++;
+      if (seen === sectionIndex) return i;
+    }
+    return -1;
+  }
+
+  function sortChildRows(card, key){
+    const index = Number(card.dataset.index);
+    if (!Number.isInteger(index)) return;
+    if (dirty){
+      pendingSort = { mode: card.dataset.mode || 'scene', sectionIndex: cardSectionIndex(card), key };
+      openDialog(document.getElementById('unsavedDialog'));
+      return;
+    }
+    sortChildRowsByIndex(index, key, false);
+  }
+
+  async function loadAreaScenes(){
+    const r = await fetch('/config/area-scenes', { cache: 'no-store' });
+    if (!r.ok) return false;
+    const payload = await r.json();
+    areas = Array.isArray(payload?.areas) ? payload.areas : [];
+    render();
+    clearDirty();
+    return true;
+  }
+
+  async function loadControlsForAutocomplete(){
+    try{
+      const r = await fetch('/config/controls', { cache: 'no-store' });
+      if (!r.ok) return;
+      const payload = await r.json();
+      controlsConfigSnapshot = Array.isArray(payload.controls) ? payload.controls : [];
+      triggerControls = controlsConfigSnapshot.filter(d => (d.function || 'control') === 'trigger');
+      controlSuggestions = controlsConfigSnapshot
+        .filter(d => (d.function || 'control') === 'control')
+        .map(d => ({
+          name: (d.deviceName || d.name || '').trim(),
+          app: Number(d.app || 56),
+          group: Number(d.group || 0)
+        }))
+        .filter(d => d.name);
+      renderTriggerControls();
+    }catch{}
+  }
+
+  function findChildSuggestion(input){
+    const value = input.value;
+    const prefix = value.trim().toLowerCase();
+    if (!prefix) return null;
+    const row = input.closest('tr');
+    const card = input.closest('.area-card');
+    const usedNames = new Set();
+    const usedAddresses = new Set();
+    card?.querySelectorAll('tbody tr').forEach(otherRow => {
+      if (otherRow === row) return;
+      const name = (otherRow.querySelector('.childName')?.value || '').trim().toLowerCase();
+      const app = (otherRow.querySelector('.childApp')?.value || '').trim();
+      const group = (otherRow.querySelector('.childGroup')?.value || '').trim();
+      if (name) usedNames.add(name);
+      if (app !== '' && group !== '') usedAddresses.add(`${Number(app)}:${Number(group)}`);
+    });
+    return controlSuggestions.find(item => {
+      const name = item.name.toLowerCase();
+      if (!name.startsWith(prefix) || item.name.length <= value.length) return false;
+      if (usedNames.has(name)) return false;
+      if (usedAddresses.has(`${Number(item.app)}:${Number(item.group)}`)) return false;
+      return true;
+    }) || null;
+  }
+
+  function updateAutocompleteGhost(input){
+    const ghost = input.closest('.autocomplete-wrap')?.querySelector('.autocomplete-ghost');
+    if (!ghost) return;
+    const match = findChildSuggestion(input);
+    if (!match){
+      ghost.textContent = '';
+      return;
+    }
+    const typed = input.value;
+    ghost.innerHTML = `<span class="autocomplete-prefix">${escapeHtml(typed)}</span><span class="autocomplete-suffix">${escapeHtml(match.name.slice(typed.length))}</span>`;
+  }
+
+  function clearAutocompleteGhost(input){
+    const ghost = input.closest('.autocomplete-wrap')?.querySelector('.autocomplete-ghost');
+    if (ghost) ghost.textContent = '';
+  }
+
+  function acceptChildAutocomplete(input){
+    const match = findChildSuggestion(input);
+    if (!match) return false;
+    input.value = match.name;
+    const tr = input.closest('tr');
+    const appInput = tr.querySelector('.childApp');
+    const groupInput = tr.querySelector('.childGroup');
+    appInput.value = match.app;
+    groupInput.value = match.group;
+    clearAutocompleteGhost(input);
+    markDirty();
+    return true;
+  }
+
+  function sceneDefaultsForCard(card){
+    const firstRow = card.querySelector('tbody tr');
+    const percent = Number(firstRow?.querySelector('.targetPercent')?.value ?? 100);
+    const level = Number(firstRow?.querySelector('.targetLevel')?.value ?? pctToLevel(percent));
+    const ramp = firstRow?.querySelector('.ramp')?.value || 'instant';
+    return {
+      targetPercent: Math.max(0, Math.min(100, Number.isFinite(percent) ? percent : 100)),
+      targetLevel: Math.max(0, Math.min(255, Number.isFinite(level) ? level : 255)),
+      ramp
+    };
+  }
+
+  function syncTargetFrom(input){
+    const card = input.closest('.area-card');
+    if (!card || card.dataset.mode === 'area' || !card.querySelector('.syncTarget')?.checked) return;
+    const tr = input.closest('tr');
+    const percent = tr.querySelector('.targetPercent')?.value || '100';
+    const level = tr.querySelector('.targetLevel')?.value || pctToLevel(percent).toString();
+    card.querySelectorAll('tbody tr').forEach(row => {
+      row.querySelector('.targetPercent').value = percent;
+      row.querySelector('.targetLevel').value = level;
+    });
+  }
+
+  function syncRampFrom(select){
+    const card = select.closest('.area-card');
+    if (!card || card.dataset.mode === 'area' || !card.querySelector('.syncRamp')?.checked) return;
+    const ramp = select.value || 'instant';
+    card.querySelectorAll('tbody tr .ramp').forEach(other => {
+      other.value = ramp;
+    });
+  }
+
+  async function save(button){
+    let payload;
+    try{
+      payload = collect();
+      validate(payload);
+    }catch(e){
+      showValidation(e?.message || 'Invalid value.');
+      return false;
+    }
+    const r = await fetch('/config/area-scenes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ areas: payload })
+    });
+    if (!r.ok){
+      let msg = 'Save failed.';
+      try{ msg = (await r.json()).error || msg; }catch{}
+      showValidation(msg);
+      return false;
+    }
+    areas = payload;
+    clearDirty();
+    button.classList.add('btn-flash-ok');
+    setTimeout(() => button.classList.remove('btn-flash-ok'), 450);
+    document.querySelectorAll('.sectionSaveMsg').forEach(el => el.textContent = '');
+    return true;
+  }
+
+  async function saveTriggerControls(button){
+    let triggers;
+    try{
+      triggers = collectTriggerControls();
+    }catch(e){
+      showValidation(e?.message || 'Invalid value.');
+      return false;
+    }
+    const nextControls = [
+      ...controlsConfigSnapshot.filter(d => (d.function || 'control') !== 'trigger'),
+      ...triggers
+    ];
+    const r = await fetch('/config/controls', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ controls: nextControls })
+    });
+    if (!r.ok){
+      let msg = 'Save failed.';
+      try{ msg = (await r.json()).error || msg; }catch{}
+      showValidation(msg);
+      return false;
+    }
+    controlsConfigSnapshot = nextControls;
+    triggerControls = triggers;
+    if (button){
+      button.classList.add('btn-flash-ok');
+      setTimeout(() => button.classList.remove('btn-flash-ok'), 450);
+    }
+    const msg = document.getElementById('triggerControlSaveMsg');
+    if (msg) msg.textContent = '';
+    return true;
+  }
+
+  async function saveAll(button){
+    const okAreas = await save(button);
+    if (!okAreas) return false;
+    const okTriggers = await saveTriggerControls(button);
+    if (!okTriggers){
+      markDirty();
+      return false;
+    }
+    clearDirty();
+    return true;
+  }
+
+  async function saveCollapsedStateOnly(){
+    const payload = collect();
+    const previousDirty = dirty;
+    try{
+      const r = await fetch('/config/area-scenes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ areas: payload })
+      });
+      if (!r.ok) return false;
+      areas = payload;
+      dirty = previousDirty;
+      return true;
+    }catch{
+      dirty = previousDirty;
+      return false;
+    }
+  }
+
+  async function fireAreaScene(card){
+    const name = card.querySelector('.areaName')?.value?.trim() || '';
+    if (!name) return;
+    const btn = card.querySelector('.triggerBtn');
+    const wasOn = btn.classList.contains('is-on');
+    const nextOn = !btn.classList.contains('is-on');
+    const body = { name, command: nextOn ? 'ON' : 'OFF' };
+    try{
+      btn.disabled = true;
+      const response = await fetch('/control/area-scene', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) throw new Error('Command failed');
+      setTriggerButtonState(btn, nextOn);
+    }catch{
+      setTriggerButtonState(btn, wasOn);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function setTriggerButtonState(btn, isOn){
+    btn.classList.toggle('is-on', isOn);
+    btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+    btn.title = isOn ? 'Turn off' : 'Turn on';
+  }
+
+  function openBulkChildDialog(card){
+    pendingBulkCard = card;
+    renderBulkChildRows(card);
+    openDialog(document.getElementById('bulkChildDialog'));
+  }
+
+  function closeBulkChildDialog(){
+    pendingBulkCard = null;
+    closeDialog(document.getElementById('bulkChildDialog'));
+  }
+
+  function renderBulkChildRows(card){
+    const body = document.getElementById('bulkChildBody');
+    const selectAll = document.getElementById('bulkChildSelectAll');
+    const existing = new Set();
+    card.querySelectorAll('tbody tr').forEach(row => {
+      const app = Number(row.querySelector('.childApp')?.value || 56);
+      const group = Number(row.querySelector('.childGroup')?.value || 0);
+      existing.add(`${app}:${group}`);
+    });
+    if (!controlSuggestions.length){
+      body.innerHTML = '<tr><td colspan="5" class="muted">No Controls are configured yet.</td></tr>';
+      selectAll.checked = false;
+      selectAll.indeterminate = false;
+      return;
+    }
+    body.innerHTML = controlSuggestions.map((item, index) => {
+      const key = `${Number(item.app)}:${Number(item.group)}`;
+      const duplicate = existing.has(key);
+      return `
+        <tr data-index="${index}">
+          <td><input class="bulkChildUse" type="checkbox" ${duplicate ? 'disabled' : 'checked'} /></td>
+          <td>${escapeHtml(item.name)}</td>
+          <td>${escapeHtml(item.app)}</td>
+          <td>${escapeHtml(item.group)}</td>
+          <td>${duplicate ? 'Already added' : 'Ready'}</td>
+        </tr>
+      `;
+    }).join('');
+    const enabled = Array.from(body.querySelectorAll('.bulkChildUse:not(:disabled)'));
+    selectAll.checked = enabled.length > 0 && enabled.every(input => input.checked);
+    selectAll.indeterminate = false;
+  }
+
+  function openBulkParentDialog(mode){
+    pendingBulkParentMode = mode === 'area' ? 'area' : 'scene';
+    const isArea = pendingBulkParentMode === 'area';
+    document.getElementById('bulkParentTitle').textContent = isArea ? 'Bulk Add Area Addresses' : 'Bulk Add Scenes';
+    document.getElementById('bulkParentPrefix').value = isArea ? 'Area ' : 'Scene ';
+    document.getElementById('bulkParentCount').value = '1';
+    document.getElementById('bulkParentApp').value = '56';
+    document.getElementById('bulkParentGroupStart').value = '0';
+    document.getElementById('bulkParentTriggerStart').value = '0';
+    document.getElementById('bulkParentAction').value = '0';
+    document.getElementById('bulkParentAppWrap').style.display = isArea ? '' : 'none';
+    document.getElementById('bulkParentGroupWrap').style.display = isArea ? '' : 'none';
+    document.getElementById('bulkParentTriggerWrap').style.display = isArea ? 'none' : '';
+    document.getElementById('bulkParentActionWrap').style.display = isArea ? 'none' : '';
+    openDialog(document.getElementById('bulkParentDialog'));
+  }
+
+  function closeBulkParentDialog(){
+    pendingBulkParentMode = '';
+    closeDialog(document.getElementById('bulkParentDialog'));
+  }
+
+  function bulkAddParents(){
+    const mode = pendingBulkParentMode === 'area' ? 'area' : 'scene';
+    const prefix = document.getElementById('bulkParentPrefix').value.trim();
+    const count = Number(document.getElementById('bulkParentCount').value || 0);
+    const app = Number(document.getElementById('bulkParentApp').value || 56);
+    const groupStart = Number(document.getElementById('bulkParentGroupStart').value || 0);
+    const triggerStart = Number(document.getElementById('bulkParentTriggerStart').value || 0);
+    const actionSelector = Number(document.getElementById('bulkParentAction').value || 0);
+    if (!Number.isInteger(count) || count <= 0) return;
+    areas = collect();
+    for (let i = 0; i < count; i++){
+      const entry = newArea(mode);
+      const number = mode === 'area' ? groupStart + i : triggerStart + i;
+      entry.name = prefix ? `${prefix}${number}` : '';
+      if (mode === 'area'){
+        entry.app = app;
+        entry.group = number;
+      } else {
+        entry.triggerGroup = number;
+        entry.actionSelector = actionSelector;
+      }
+      areas.push(entry);
+    }
+    render();
+    markDirty();
+    closeBulkParentDialog();
+  }
+
+  function bulkAddChildren(){
+    if (!pendingBulkCard) return;
+    const tbody = pendingBulkCard.querySelector('tbody');
+    const template = sceneDefaultsForCard(pendingBulkCard);
+    let added = 0;
+    document.querySelectorAll('#bulkChildBody tr').forEach(row => {
+      const use = row.querySelector('.bulkChildUse');
+      if (!use || !use.checked || use.disabled) return;
+      const item = controlSuggestions[Number(row.dataset.index)];
+      if (!item) return;
+      tbody.insertAdjacentHTML('beforeend', childRowHtml({
+        entityName: item.name,
+        app: item.app,
+        group: item.group,
+        targetPercent: template.targetPercent,
+        targetLevel: template.targetLevel,
+        ramp: template.ramp
+      }));
+      added++;
+    });
+    syncAllModeVisibility();
+    if (added > 0) markDirty();
+    closeBulkChildDialog();
+  }
+
+  function openBulkTriggerControlDialog(){
+    document.getElementById('bulkTriggerControlPrefix').value = 'Trigger ';
+    document.getElementById('bulkTriggerControlCount').value = '1';
+    document.getElementById('bulkTriggerControlStart').value = '0';
+    document.getElementById('bulkTriggerControlAction').value = '0';
+    openDialog(document.getElementById('bulkTriggerControlDialog'));
+  }
+
+  function closeBulkTriggerControlDialog(){
+    closeDialog(document.getElementById('bulkTriggerControlDialog'));
+  }
+
+  function bulkAddTriggerControls(){
+    const prefix = document.getElementById('bulkTriggerControlPrefix').value.trim();
+    const count = Number(document.getElementById('bulkTriggerControlCount').value || 0);
+    const start = Number(document.getElementById('bulkTriggerControlStart').value || 0);
+    const actionSelector = Number(document.getElementById('bulkTriggerControlAction').value || 0);
+    if (!Number.isInteger(count) || count <= 0 || !Number.isInteger(start) || !Number.isInteger(actionSelector)) return;
+    const body = document.getElementById('triggerControlBody');
+    for (let i = 0; i < count; i++){
+      const group = start + i;
+      body.insertAdjacentHTML('beforeend', triggerControlRowHtml({
+        deviceName: prefix ? `${prefix}${group}` : '',
+        group,
+        actionSelector
+      }));
+    }
+    markDirty();
+    closeBulkTriggerControlDialog();
+  }
+
+  async function fireTriggerControl(row){
+    const triggerGroup = Number(row.querySelector('.triggerControlGroup')?.value || NaN);
+    const actionSelector = Number(row.querySelector('.triggerControlAction')?.value || NaN);
+    if (!Number.isFinite(triggerGroup) || !Number.isFinite(actionSelector)) return;
+    const btn = row.querySelector('.triggerBtn');
+    try{
+      btn?.classList.add('is-on');
+      await fetch('/control/trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ triggerGroup, actionSelector })
+      });
+    }catch{
+      // Saved validation handles configured values; status refresh will correct failures.
+    }finally{
+      setTimeout(() => btn?.classList.remove('is-on'), 350);
+    }
+  }
+
+  async function updateLicenceWarning(){
+    const warning = document.getElementById('licenceWarning');
+    if (!warning) return;
+    try{
+      const r = await fetch('/api/stats', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const stats = await r.json();
+      const licence = stats.licence || {};
+      if (licence.isValid) warning.classList.add('hidden');
+      else {
+        warning.textContent = 'Failure: ' + (licence.message || 'Licence key is invalid.');
+        warning.classList.remove('hidden');
+      }
+    }catch{}
+  }
+
+  document.getElementById('bulkChildCancelBtn').addEventListener('click', closeBulkChildDialog);
+  document.getElementById('bulkChildAddBtn').addEventListener('click', bulkAddChildren);
+  document.getElementById('bulkTriggerControlCancelBtn').addEventListener('click', closeBulkTriggerControlDialog);
+  document.getElementById('bulkTriggerControlAddBtn').addEventListener('click', bulkAddTriggerControls);
+  document.getElementById('bulkChildSelectAll').addEventListener('change', event => {
+    document.querySelectorAll('#bulkChildBody .bulkChildUse:not(:disabled)').forEach(input => {
+      input.checked = event.target.checked;
+    });
+  });
+  document.getElementById('bulkChildBody').addEventListener('change', () => {
+    const enabled = Array.from(document.querySelectorAll('#bulkChildBody .bulkChildUse:not(:disabled)'));
+    const checked = enabled.filter(input => input.checked);
+    const selectAll = document.getElementById('bulkChildSelectAll');
+    selectAll.checked = enabled.length > 0 && checked.length === enabled.length;
+    selectAll.indeterminate = checked.length > 0 && checked.length < enabled.length;
+  });
+  document.getElementById('bulkParentCancelBtn').addEventListener('click', closeBulkParentDialog);
+  document.getElementById('bulkParentAddBtn').addEventListener('click', bulkAddParents);
+  document.getElementById('fieldValidationOkBtn').addEventListener('click', () => closeDialog(document.getElementById('fieldValidationDialog')));
+  document.getElementById('unsavedSaveBtn').addEventListener('click', async event => {
+    const href = pendingNavigationHref;
+    const sort = pendingSort;
+    closeDialog(document.getElementById('unsavedDialog'));
+    const ok = await saveAll(event.currentTarget);
+    pendingNavigationHref = '';
+    pendingSort = null;
+    if (ok && href) window.location.href = href;
+    if (ok && sort) sortChildRowsByIndex(resolveSectionIndex(sort.mode, sort.sectionIndex), sort.key, false);
+  });
+  document.getElementById('unsavedCancelBtn').addEventListener('click', () => {
+    pendingNavigationHref = '';
+    pendingSort = null;
+    closeDialog(document.getElementById('unsavedDialog'));
+  });
+  document.getElementById('unsavedContinueBtn').addEventListener('click', async () => {
+    const href = pendingNavigationHref;
+    const sort = pendingSort;
+    pendingNavigationHref = '';
+    pendingSort = null;
+    closeDialog(document.getElementById('unsavedDialog'));
+    if (href) window.location.href = href;
+    if (sort && await loadAreaScenes()) sortChildRowsByIndex(resolveSectionIndex(sort.mode, sort.sectionIndex), sort.key, false);
+  });
+  document.getElementById('removeNoBtn').addEventListener('click', () => { pendingRemove = null; closeDialog(document.getElementById('removeDialog')); });
+  document.getElementById('removeYesBtn').addEventListener('click', () => {
+    if (pendingRemove?.kind === 'area'){
+      pendingRemove.card.remove();
+    } else if (pendingRemove?.kind === 'child'){
+      pendingRemove.row.remove();
+    } else if (pendingRemove?.kind === 'trigger'){
+      pendingRemove.row.remove();
+    }
+    pendingRemove = null;
+    markDirty();
+    closeDialog(document.getElementById('removeDialog'));
+  });
+  document.getElementById('areaSceneSections').addEventListener('input', event => {
+    if (event.target?.classList?.contains('targetPercent')){
+      const tr = event.target.closest('tr');
+      tr.querySelector('.targetLevel').value = pctToLevel(event.target.value);
+      syncTargetFrom(event.target);
+    } else if (event.target?.classList?.contains('targetLevel')){
+      const tr = event.target.closest('tr');
+      tr.querySelector('.targetPercent').value = levelToPct(event.target.value);
+      syncTargetFrom(event.target);
+    } else if (event.target?.classList?.contains('childName')){
+      updateAutocompleteGhost(event.target);
+    }
+    markDirty();
+  });
+  document.getElementById('areaSceneSections').addEventListener('change', event => {
+    if (event.target?.classList?.contains('ramp')){
+      syncRampFrom(event.target);
+    } else if (event.target?.classList?.contains('syncTarget') && event.target.checked){
+      const first = event.target.closest('.area-card')?.querySelector('tbody tr .targetPercent');
+      if (first) syncTargetFrom(first);
+    } else if (event.target?.classList?.contains('syncRamp') && event.target.checked){
+      const first = event.target.closest('.area-card')?.querySelector('tbody tr .ramp');
+      if (first) syncRampFrom(first);
+    }
+    markDirty();
+  });
+  document.getElementById('areaSceneSections').addEventListener('keydown', event => {
+    if (!event.target?.classList?.contains('childName')) return;
+    if (event.key === 'Tab' || event.key === 'Enter'){
+      if (acceptChildAutocomplete(event.target)){
+        event.preventDefault();
+      }
+    } else if (event.key === 'Escape'){
+      clearAutocompleteGhost(event.target);
+    }
+  });
+  document.getElementById('areaSceneSections').addEventListener('focusout', event => {
+    if (event.target?.classList?.contains('childName')){
+      clearAutocompleteGhost(event.target);
+    }
+  });
+  document.getElementById('areaSceneSections').addEventListener('click', event => {
+    const card = event.target.closest('.area-card');
+    if (event.target.classList.contains('addParentBtn')){
+      areas = collect();
+      areas.push(newArea(event.target.dataset.mode === 'area' ? 'area' : 'scene'));
+      render();
+      markDirty();
+      return;
+    }
+    if (event.target.classList.contains('bulkParentBtn')){
+      openBulkParentDialog(event.target.dataset.mode);
+      return;
+    }
+    if (event.target.classList.contains('saveAreaBtn')){
+      saveAll(event.target);
+      return;
+    }
+    if (event.target.id === 'addTriggerControlBtn'){
+      document.getElementById('triggerControlBody').insertAdjacentHTML('beforeend', triggerControlRowHtml());
+      markDirty();
+      return;
+    }
+    if (event.target.id === 'bulkTriggerControlBtn'){
+      openBulkTriggerControlDialog();
+      return;
+    }
+    if (event.target.id === 'saveTriggerControlBtn'){
+      saveAll(event.target);
+      return;
+    }
+    if (event.target.closest('.trigger-control-table .triggerBtn')){
+      fireTriggerControl(event.target.closest('tr'));
+      return;
+    }
+    if (event.target.classList.contains('removeTriggerControlBtn')){
+      pendingRemove = { kind: 'trigger', row: event.target.closest('tr') };
+      openDialog(document.getElementById('removeDialog'));
+      return;
+    }
+    if (!card) return;
+    if (event.target.closest('.triggerBtn')){
+      fireAreaScene(card);
+    } else if (event.target.classList.contains('child-sort-header')){
+      sortChildRows(card, event.target.dataset.childSort);
+    } else if (event.target.classList.contains('addChildBtn')){
+      const tbody = card.querySelector('tbody');
+      const child = newChild();
+      if (card.dataset.mode !== 'area'){
+        const template = sceneDefaultsForCard(card);
+        if (card.querySelector('.syncTarget')?.checked){
+          child.targetPercent = template.targetPercent;
+          child.targetLevel = template.targetLevel;
+        }
+        if (card.querySelector('.syncRamp')?.checked){
+          child.ramp = template.ramp;
+        }
+      }
+      tbody.insertAdjacentHTML('beforeend', childRowHtml(child));
+      syncAllModeVisibility();
+      markDirty();
+    } else if (event.target.classList.contains('bulkChildBtn')){
+      openBulkChildDialog(card);
+    } else if (event.target.classList.contains('removeAreaBtn')){
+      pendingRemove = { kind: 'area', card };
+      openDialog(document.getElementById('removeDialog'));
+    } else if (event.target.classList.contains('removeChildBtn')){
+      pendingRemove = { kind: 'child', row: event.target.closest('tr') };
+      openDialog(document.getElementById('removeDialog'));
+    } else if (event.target.classList.contains('collapseBtn')){
+      card.classList.toggle('collapsed');
+      event.target.textContent = card.classList.contains('collapsed') ? 'Expand' : 'Collapse';
+      if (!dirty) saveCollapsedStateOnly();
+    }
+  });
+  document.querySelectorAll('.nav .navBtn').forEach(a => {
+    const href = a.getAttribute('href') || '';
+    if (!href || href === window.location.pathname) return;
+    a.addEventListener('click', event => {
+      if (!dirty) return;
+      event.preventDefault();
+      pendingNavigationHref = a.href;
+      openDialog(document.getElementById('unsavedDialog'));
+    });
+  });
+
+  (async () => {
+    await loadControlsForAutocomplete();
+    const boot = initialAreaScenesBootstrap;
+    initialAreaScenesBootstrap = null;
+    areas = Array.isArray(boot?.areas) ? boot.areas : [];
+    render();
+    clearDirty();
+    updateLicenceWarning();
+    setInterval(updateLicenceWarning, 1000);
+  })();
+})();
+  </script>
+</body>
+</html>

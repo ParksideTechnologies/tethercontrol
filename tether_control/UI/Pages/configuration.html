@@ -33,7 +33,7 @@
       background: #ffffff;
     }
     .page { width: var(--page-width); min-width: var(--page-width); max-width: var(--page-width); margin: 24px auto; }
-    .card, .box {
+    .box {
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
@@ -170,7 +170,8 @@
     .password-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .password-toggle .eye-slash { display: none; }
     .password-toggle[aria-pressed="true"] .eye-slash { display: block; }
-    .section-heading { margin:0 0 8px 0; font-size: 1.15rem; font-weight: 700; }
+    .section-heading { margin:0 0 8px 0; font-size: 1.05em; font-weight: 700; }
+    .box + .section-heading { margin-top: 18px; }
     .interface-settings-label { font-weight: 700; }
     .modeMsg { display:inline-block; max-width:110px; line-height:1.1; white-space:normal; }
     .hidden { display:none !important; }
@@ -180,8 +181,8 @@
     .core-app-table th, .core-app-table td { padding: 4px 6px; text-align: left; vertical-align: middle; }
     .core-app-table th { font-weight: 600; }
     .core-app-table th:first-child, .core-app-table td:first-child { width: 58px; padding-left: 0; text-align: center; }
-    .core-app-table .coreType { width: 132px; }
-    .core-app-table .coreApp { width: 74px; }
+    .core-app-table .coreType { width: 168px; }
+    .core-app-table .coreApp { width: 104px; }
     .core-app-table .coreName { width: 180px; }
     .core-app-actions { margin-top:0; justify-content:flex-end; }
     .time-field { width: 64px; }
@@ -216,7 +217,8 @@
     <div class="banner"><span>Tether Control</span><span>{{APP_VERSION}}</span></div>
     <div class="nav">
       <a class="navBtn" href="/">Configuration</a>
-      <a class="navBtn" href="/controls">C-Bus Group Setup</a>
+      <a class="navBtn" href="/controls">Group Address Setup</a>
+      <a class="navBtn" href="/area-scenes">Area &amp; Scene Setup</a>
       <a class="navBtn" href="/tools">Tools</a>
       <a class="navBtn" href="/help">Help</a>
     </div>
@@ -225,9 +227,8 @@
       <span id="licenceWarning" class="licence-warning hidden">Failure: Licence key is invalid.</span>
     </div>
 
-    <div class="card">
-    <div class="card" id="interfacesCard">
     <p class="section-heading">C-Bus Interface</p>
+    <div class="box" id="interfacesCard">
     <div style="display:none;">
       <input id="iface1Type" type="hidden" value="sim" />
       <input id="serialDeviceInput" type="hidden" value="/dev/ttyAMA0" readonly />
@@ -352,10 +353,8 @@
     </div>
     </div>
 
-    <div class="box" style="margin-top:12px;">
-      <div class="row">
-        <p style="margin:0;"><b>C-Bus Applications</b></p>
-      </div>
+    <p class="section-heading">C-Bus Applications</p>
+    <div class="box">
       <div class="core-app-wrap">
         <div class="core-app-table">
           <table>
@@ -363,7 +362,7 @@
               <tr>
                 <th>Enable</th>
                 <th>Type</th>
-                <th>App</th>
+                <th>Application</th>
                 <th>Name</th>
                 <th></th>
               </tr>
@@ -373,16 +372,14 @@
         </div>
         <div class="row core-app-actions">
           <span class="muted" id="coreMsg"></span>
-          <button id="coreAddBtn" type="button">Add App</button>
+          <button id="coreAddBtn" type="button">Add Application</button>
           <button id="coreSaveBtn" type="button">Save</button>
         </div>
       </div>
     </div>
 
-    <div class="box" style="margin-top:12px;">
-      <div class="row" style="justify-content: space-between;">
-        <p style="margin:0;"><b>MQTT Broker</b></p>
-      </div>
+    <p class="section-heading">MQTT Broker</p>
+    <div class="box">
       <div class="row" style="margin-top:10px;">
         <p style="margin:0;"><b>Status:</b></p>
         <span id="statusMqtt" class="status-pill status-bad">MQTT: Disconnected</span>
@@ -411,10 +408,8 @@
       </div>
     </div>
 
-    <div class="box" style="margin-top:12px;">
-      <div class="row" style="justify-content: space-between;">
-        <p style="margin:0;"><b>Network Time Manager</b></p>
-      </div>
+    <p class="section-heading">Network Time Manager</p>
+    <div class="box">
       <div class="row" style="margin-top:6px;">
         <label><input id="timeEnabled" type="checkbox" /> Enable</label>
         <label><input id="timeSendTime" type="checkbox" /> Send Time</label>
@@ -491,8 +486,6 @@
       </div>
     </dialog>
 
-  </div>
-  </div>
   </div>
 
 <script>
@@ -853,8 +846,9 @@
     const type = d?.type ?? 'lighting';
     const appOptions = (() => {
       const items = [];
-      for (let n = 48; n <= 95; n++) items.push(n);
-      items.push(228);
+      if (type === 'trigger') items.push(202);
+      else if (type === 'measurement') items.push(228);
+      else for (let n = 48; n <= 95; n++) items.push(n);
       return items.map(n => `<option value="${n}" ${String(app) === String(n) ? 'selected' : ''}>${n}</option>`).join('');
     })();
     return `
@@ -863,6 +857,7 @@
         <td>
           <select class="coreType">
             <option value="lighting" ${type === 'lighting' ? 'selected' : ''}>Lighting</option>
+            <option value="trigger" ${type === 'trigger' ? 'selected' : ''}>Trigger Control</option>
             <option value="measurement" ${type === 'measurement' ? 'selected' : ''}>Measurement</option>
           </select>
         </td>
@@ -875,6 +870,7 @@
   const coreAllowedApps = (() => {
     const list = [];
     for (let n = 48; n <= 95; n++) list.push(n);
+    list.push(202);
     list.push(228);
     return list;
   })();
@@ -912,9 +908,14 @@
   function refreshCoreAppChoices(){
     const selects = Array.from(document.querySelectorAll('#coreAppBody .coreApp'));
     selects.forEach(sel => {
+      const type = sel.closest('tr')?.querySelector('.coreType')?.value || 'lighting';
       const current = Number(sel.value || 0);
       const usedElse = getUsedCoreApps(sel);
-      const opts = coreAllowedApps.filter(n => n === current || !usedElse.has(n));
+      const opts = type === 'trigger'
+        ? [202]
+        : type === 'measurement'
+          ? [228]
+          : coreAllowedApps.filter(n => n >= 48 && n <= 95 && (n === current || !usedElse.has(n)));
       sel.innerHTML = opts.map(n => `<option value="${n}">${n}</option>`).join('');
       if (opts.includes(current)) sel.value = String(current);
       else if (opts.length) sel.value = String(opts[0]);
@@ -946,6 +947,7 @@
       const list = c.apps && c.apps.length ? c.apps : [];
       if (!list.length){
         body.insertAdjacentHTML('beforeend', rowTemplateCoreApp({ app:56, name:'Lighting', type:'lighting', enabled:true }));
+        body.insertAdjacentHTML('beforeend', rowTemplateCoreApp({ app:202, name:'Trigger Control', type:'trigger', enabled:true }));
         body.insertAdjacentHTML('beforeend', rowTemplateCoreApp({ app:228, name:'Measurement', type:'measurement', enabled:true }));
       } else {
         for (const d of list) body.insertAdjacentHTML('beforeend', rowTemplateCoreApp(d));
@@ -968,7 +970,7 @@
     for (const sel of document.querySelectorAll('#coreAppBody .coreApp')){
       const appNum = Number(sel.value || 0);
       if (seen.has(appNum)){
-        msg.textContent = 'ERR: Duplicate app addresses are not allowed.';
+        msg.textContent = 'ERR: Duplicate application addresses are not allowed.';
         return false;
       }
       seen.add(appNum);
@@ -1053,7 +1055,7 @@
     const used = getUsedCoreApps();
     const nextApp = findNextCoreApp(coreLastAddedApp, used);
     if (nextApp == null){
-      msg.textContent = 'No free app addresses available.';
+      msg.textContent = 'No free application addresses available.';
       return;
     }
     document.getElementById('coreAppBody').insertAdjacentHTML('beforeend', rowTemplateCoreApp({ app: nextApp }));
@@ -1079,6 +1081,26 @@
   });
   if (coreBody) coreBody.addEventListener('input', () => { coreDirty = true; });
   if (coreBody) coreBody.addEventListener('change', (e) => {
+    const typeSel = e.target.closest('.coreType');
+    if (typeSel){
+      const tr = typeSel.closest('tr');
+      const appSel = tr?.querySelector('.coreApp');
+      if (appSel){
+        const type = typeSel.value || 'lighting';
+        if (type === 'trigger') appSel.innerHTML = '<option value="202">202</option>';
+        else if (type === 'measurement') appSel.innerHTML = '<option value="228">228</option>';
+        else appSel.innerHTML = Array.from({ length: 48 }, (_, i) => i + 48)
+          .filter(n => !getUsedCoreApps(appSel).has(n))
+          .map(n => `<option value="${n}">${n}</option>`).join('');
+        if (type === 'trigger') appSel.value = '202';
+        else if (type === 'measurement') appSel.value = '228';
+        else appSel.value = appSel.querySelector('option')?.value || '';
+      }
+      refreshCoreAppChoices();
+      syncCoreLastAddedApp();
+      coreDirty = true;
+      return;
+    }
     const sel = e.target.closest('.coreApp');
     if (!sel) return;
     const msg = document.getElementById('coreMsg');
@@ -1088,12 +1110,12 @@
       const prev = sel.dataset.prev;
       if (prev !== undefined && prev !== null && prev !== '')
         sel.value = prev;
-      msg.textContent = 'ERR: Duplicate app addresses are not allowed.';
+      msg.textContent = 'ERR: Duplicate application addresses are not allowed.';
       return;
     }
     sel.dataset.prev = sel.value;
     coreLastAddedApp = selected;
-    if (msg && (msg.textContent || '').startsWith('ERR: Duplicate app addresses'))
+    if (msg && (msg.textContent || '').startsWith('ERR: Duplicate application addresses'))
       msg.textContent = '';
     refreshCoreAppChoices();
     coreDirty = true;
@@ -1549,7 +1571,7 @@
     if (s.apps && s.apps.length){
       for (const app of s.apps){
         const label = app.name ? `${app.app} (${app.name})` : `${app.app}`;
-        out += `<div class="line"><b>App ${escHtml(label)}</b></div>`;
+        out += `<div class="line"><b>Application ${escHtml(label)}</b></div>`;
         if (!app.groups || !app.groups.length){
           out += `<div class="line">(no groups)</div>`;
           continue;
@@ -1566,7 +1588,7 @@
     if (s.measurement && s.measurement.length){
       const mk = s.measurementAppKey || '';
       const mn = s.measurementAppName || s.measurementLabel || '';
-      const mTitle = mk ? `App ${mk}${mn ? ' (' + mn + ')' : ''}` : (mn || 'Measurement');
+      const mTitle = mk ? `Application ${mk}${mn ? ' (' + mn + ')' : ''}` : (mn || 'Measurement');
       out += `<div class="line"><b>${escHtml(mTitle)}</b></div>`;
       for (const row of s.measurement){
         const dev = String(row.deviceId).padStart(3,'0');

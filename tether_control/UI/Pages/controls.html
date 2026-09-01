@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" href="/favicon.ico" />
-  <title>C-Bus Group Setup - Tether Control</title>
+  <title>Group Address Setup - Tether Control</title>
   <style>
     :root {
       --page-width: 1280px;
@@ -24,8 +24,9 @@
     }
     body { font-family: "Segoe UI", Tahoma, sans-serif; margin: 0; overflow-x: auto; color: var(--ink); background: #ffffff; }
     .page { width: var(--page-width); min-width: var(--page-width); max-width: var(--page-width); margin: 24px auto; }
-    .card, .box { width: 100%; max-width: 100%; box-sizing: border-box; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: color-mix(in srgb, var(--card) 96%, white);  }
-    .card > .box { margin-top: 12px; }
+    .box { width: 100%; max-width: 100%; box-sizing: border-box; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: color-mix(in srgb, var(--card) 96%, white);  }
+    .section-title { margin: 0 0 8px 0; font-size: 1.05em; font-weight: 700; }
+    .box + .section-title { margin-top: 18px; }
     .row { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
     .muted { color: var(--muted); font-size: 0.95em; }
     input, select, button { font: inherit; }
@@ -42,24 +43,41 @@
     th.sortable.sorted-desc::after { content: " ▼"; font-size: 0.85em; color: #555; }
     select.type { min-width: 112px; }
     .small { width: 54px; }
+    input.app, #bulkAppInput { width: 92px; box-sizing: border-box; }
     .med { width: 170px; }
     .pulse-sm { width: 60px; }
     input.deviceName { width: 470px; box-sizing: border-box; }
+    table.secondary-device-table input.deviceName { width: 100%; }
     td.state, td.level { white-space: nowrap; font-variant-numeric: tabular-nums; }
     td.state { min-width: 14ch; }
     td.level { min-width: 11ch; }
     th.col-trigger, td.col-trigger { width: 104px; text-align: left; }
     td.col-trigger { padding-left: 4px; }
     th.col-remove, td.col-remove { width: 88px; text-align: right; }
+    table.edge-action-table th.col-remove,
+    table.edge-action-table td.col-remove { padding-right: 0; }
+    table.edge-action-table td.row-action { text-align: center; padding-left: 6px; padding-right: 6px; }
+    table.edge-action-table td.row-action .triggerCellWrap { width: 100%; justify-content: center; }
     table.secondary-device-table { table-layout: fixed; }
-    table.secondary-device-table col.col-entity { width: 482px; }
+    table.secondary-device-table col.col-entity { width: auto; }
     table.secondary-device-table col.col-number { width: 82px; }
+    table.secondary-device-table col.col-application { width: 104px; }
     table.secondary-device-table col.col-binary-invert { width: 90px; }
     table.secondary-device-table col.col-input-type { width: 190px; }
     table.secondary-device-table col.col-voltage { width: 90px; }
     table.secondary-device-table col.col-state { width: 150px; }
     table.secondary-device-table col.col-level,
     table.secondary-device-table col.col-value { width: 120px; }
+    table.secondary-device-table col.col-remove-action { width: 88px; }
+    table.trigger-table col.col-trigger-name { width: auto; }
+    table.trigger-table col.col-trigger-number { width: 150px; }
+    table.trigger-table col.col-trigger-action { width: 170px; }
+    table.trigger-table col.col-trigger-fire { width: 58px; }
+    table.trigger-table col.col-trigger-remove { width: 88px; }
+    table.trigger-table th.col-trigger,
+    table.trigger-table td.col-trigger { width: 58px; }
+    table.trigger-table input.triggerGroup,
+    table.trigger-table input.actionSelector { width: 100%; box-sizing: border-box; }
     .triggerCellWrap { display: inline-flex; align-items: center; gap: 12px; position: relative; }
     .triggerBtn {
       width: 42px;
@@ -223,25 +241,23 @@
     <div class="banner"><span>Tether Control</span><span>{{APP_VERSION}}</span></div>
     <div class="nav">
       <a class="navBtn" href="/">Configuration</a>
-      <a class="navBtn" href="/controls">C-Bus Group Setup</a>
+      <a class="navBtn" href="/controls">Group Address Setup</a>
+      <a class="navBtn" href="/area-scenes">Area &amp; Scene Setup</a>
       <a class="navBtn" href="/tools">Tools</a>
       <a class="navBtn" href="/help">Help</a>
     </div>
     <div class="page-title-row">
-      <h1>C-Bus Group Setup</h1>
+      <h1>Group Address Setup</h1>
       <span id="licenceWarning" class="licence-warning hidden">Failure: Licence key is invalid.</span>
     </div>
-    <div class="card">
+    <p class="section-title">Controls</p>
     <div class="box">
-      <div class="row">
-        <p style="margin:0;"><b>Controls</b></p>
-      </div>
-      <table>
+      <table class="edge-action-table">
         <thead>
           <tr>
             <th class="sortable" data-sort-section="control" data-sort-type="text">Entity Name</th>
             <th class="sortable col-device-type" data-sort-section="control" data-sort-type="text">Device Type</th>
-            <th class="sortable" data-sort-section="control" data-sort-type="num">App</th>
+            <th class="sortable" data-sort-section="control" data-sort-type="num">Application</th>
             <th class="sortable" data-sort-section="control" data-sort-type="num">Group</th>
             <th class="sortable" data-sort-section="control" data-sort-type="text">State</th>
             <th class="sortable" data-sort-section="control" data-sort-type="num">Level</th>
@@ -259,24 +275,22 @@
       </div>
     </div>
 
+    <p class="section-title">Binary Sensors</p>
     <div class="box">
-      <div class="row">
-        <p style="margin:0;"><b>Binary Sensors</b></p>
-      </div>
       <table class="secondary-device-table">
         <colgroup>
           <col class="col-entity" />
-          <col class="col-number" />
+          <col class="col-application" />
           <col class="col-number" />
           <col class="col-binary-invert" />
           <col class="col-state" />
           <col class="col-level" />
-          <col />
+          <col class="col-remove-action" />
         </colgroup>
         <thead>
           <tr>
             <th class="sortable" data-sort-section="binary" data-sort-type="text">Entity Name</th>
-            <th class="sortable" data-sort-section="binary" data-sort-type="num">App</th>
+            <th class="sortable" data-sort-section="binary" data-sort-type="num">Application</th>
             <th class="sortable" data-sort-section="binary" data-sort-type="num">Group</th>
             <th class="sortable" data-sort-section="binary" data-sort-type="text">Invert</th>
             <th class="sortable" data-sort-section="binary" data-sort-type="text">State</th>
@@ -288,16 +302,14 @@
       </table>
       <div class="row" style="margin-top:10px; justify-content:flex-end;">
         <span class="muted" id="binarySaveMsg"></span>
-        <button id="addBinaryBtn" type="button">Add Binary Sensor</button>
+        <button id="addBinaryBtn" type="button">Add Sensor</button>
         <button id="bulkBinaryBtn" type="button">Bulk Add</button>
         <button id="saveBinaryBtn" type="button">Save</button>
       </div>
     </div>
 
+    <p class="section-title">Measurement Sensors</p>
     <div class="box">
-      <div class="row">
-        <p style="margin:0;"><b>Measurement Sensors</b></p>
-      </div>
       <table class="secondary-device-table">
         <colgroup>
           <col class="col-entity" />
@@ -306,7 +318,7 @@
           <col class="col-number" />
           <col class="col-voltage" />
           <col class="col-value" />
-          <col />
+          <col class="col-remove-action" />
         </colgroup>
         <thead>
           <tr>
@@ -323,22 +335,20 @@
       </table>
       <div class="row" style="margin-top:10px; justify-content:flex-end;">
         <span class="muted" id="measSaveMsg"></span>
-        <button id="addMeasBtn" type="button">Add Measurement</button>
+        <button id="addMeasBtn" type="button">Add Sensor</button>
         <button id="bulkMeasBtn" type="button">Bulk Add</button>
         <button id="saveMeasBtn" type="button">Save</button>
       </div>
     </div>
 
+    <p class="section-title">Shutters</p>
     <div class="box">
-      <div class="row">
-        <p style="margin:0;"><b>Shutters</b></p>
-      </div>
-      <table>
+      <table class="edge-action-table">
         <thead>
           <tr>
             <th class="sortable" data-sort-section="shutter" data-sort-type="text">Entity Name</th>
             <th class="sortable" data-sort-section="shutter" data-sort-type="text">Device Type</th>
-            <th class="sortable" data-sort-section="shutter" data-sort-type="num">App</th>
+            <th class="sortable" data-sort-section="shutter" data-sort-type="num">Application</th>
             <th class="sortable" data-sort-section="shutter" data-sort-type="num">Group</th>
             <th class="sortable" data-sort-section="shutter" data-sort-type="text">Control Type</th>
             <th class="sortable" data-sort-section="shutter" data-sort-type="num">Pulse</th>
@@ -368,11 +378,11 @@
           <label for="bulkCountInput">Count</label>
           <input id="bulkCountInput" class="small" placeholder="10" />
         </div>
-        <div class="bulk-field bulk-common">
-          <label for="bulkAppInput">App</label>
+        <div class="bulk-field bulk-common bulk-app-field">
+          <label for="bulkAppInput">Application</label>
           <input id="bulkAppInput" class="small" placeholder="56" />
         </div>
-        <div class="bulk-field bulk-common">
+        <div class="bulk-field bulk-common bulk-start-field">
           <label for="bulkStartInput">Group Start</label>
           <input id="bulkStartInput" class="small bulk-start-group" placeholder="0" />
         </div>
@@ -429,6 +439,10 @@
           <label for="bulkShutterPulseInput">Pulse</label>
           <input id="bulkShutterPulseInput" class="small" placeholder="0.25" />
         </div>
+        <div class="bulk-field bulk-trigger">
+          <label for="bulkTriggerActionInput">Action Selector</label>
+          <input id="bulkTriggerActionInput" class="small" placeholder="0" />
+        </div>
       </div>
       <div class="row" style="margin-top:12px; justify-content:flex-end;">
         <button id="bulkDialogCancelBtn" type="button">Cancel</button>
@@ -452,7 +466,7 @@
     </dialog>
     <dialog id="fieldValidationDialog">
       <h3 style="margin:0 0 10px 0;">Invalid Value</h3>
-      <p id="fieldValidationDialogText" style="margin:0 0 10px 0;">App cannot be ABC.</p>
+      <p id="fieldValidationDialogText" style="margin:0 0 10px 0;">Application cannot be ABC.</p>
       <div class="row" style="justify-content:flex-end;">
         <button id="fieldValidationOkBtn" type="button">OK</button>
       </div>
@@ -477,7 +491,6 @@
         <button id="missingAppNameSaveBtn" type="button">Save</button>
       </div>
     </dialog>
-  </div>
 
 <script>
 (() => {
@@ -513,13 +526,15 @@
     control: false,
     binary: false,
     measurement: false,
-    shutter: false
+    shutter: false,
+    trigger: false
   };
   const sortState = {
     control: { idx: null, dir: 1 },
     binary: { idx: null, dir: 1 },
     measurement: { idx: null, dir: 1 },
-    shutter: { idx: null, dir: 1 }
+    shutter: { idx: null, dir: 1 },
+    trigger: { idx: null, dir: 1 }
   };
   let pendingSort = null;
   let coreAppsCache = [];
@@ -527,11 +542,12 @@
   let pendingMissingApp = null;
   let pendingMissingAppSave = null;
   let bypassMissingAppCheckOnce = false;
+  let preservedTriggerControls = [];
   let initialControlsBootstrap = {{INITIAL_CONTROLS_JSON}};
   let initialStatusBootstrap = {{INITIAL_STATUS_JSON}};
   let initialMeasurementBootstrap = {{INITIAL_MEAS_JSON}};
   function hasAnyDirty(){
-    return !!(dirtyBySection.control || dirtyBySection.binary || dirtyBySection.measurement || dirtyBySection.shutter);
+    return !!(dirtyBySection.control || dirtyBySection.binary || dirtyBySection.measurement || dirtyBySection.shutter || dirtyBySection.trigger);
   }
 
   function markDirty(section){
@@ -543,6 +559,7 @@
     dirtyBySection.binary = false;
     dirtyBySection.measurement = false;
     dirtyBySection.shutter = false;
+    dirtyBySection.trigger = false;
   }
 
   function extractNumber(text){
@@ -698,12 +715,22 @@
     return coreAppsCache.some(a => (a?.type || '').toString().toLowerCase() === 'measurement' && !!a?.enabled);
   }
 
+  function isTriggerAppEnabled(){
+    return coreAppsCache.some(a => Number(a?.app) === 202 && (a?.type || '').toString().toLowerCase() === 'trigger' && !!a?.enabled);
+  }
+
   function findFirstMissingAppRequirement(rows){
     const seen = new Set();
     let hasMeasurement = false;
+    let hasTrigger = false;
     for (const row of rows){
-      if ((row?.function || '').toString().toLowerCase() === 'measurement'){
+      const func = (row?.function || '').toString().toLowerCase();
+      if (func === 'measurement'){
         hasMeasurement = true;
+        continue;
+      }
+      if (func === 'trigger'){
+        hasTrigger = true;
         continue;
       }
       const appNum = Number(row?.app);
@@ -711,6 +738,7 @@
       seen.add(appNum);
       if (!isAppEnabled(appNum)) return { app: appNum, type: 'lighting', deviceLabel: 'Control device' };
     }
+    if (hasTrigger && !isTriggerAppEnabled()) return { app: 202, type: 'trigger', deviceLabel: 'Trigger Control' };
     if (hasMeasurement && !isMeasurementAppEnabled()) return { app: 228, type: 'measurement', deviceLabel: 'Measurement' };
     return null;
   }
@@ -1097,7 +1125,7 @@
         <td><input class="group small" inputmode="numeric" placeholder="0" value="${group}" /></td>
         <td class="state">${state}</td>
         <td class="level">${level}</td>
-        <td class="col-trigger">${renderControlActions(type, d?.state, d?.level)}</td>
+        <td class="col-trigger row-action">${renderControlActions(type, d?.state, d?.level)}</td>
         <td class="col-remove"><button class="delBtn" type="button">Remove</button></td>
       </tr>
     `;
@@ -1172,7 +1200,22 @@
           </select>
         </td>
         <td><input class="pulse pulse-sm" placeholder="0.25" value="${pulse}" /></td>
-        <td class="col-trigger"><div class="triggerCellWrap">${renderTriggerButton(isStateOn(d?.state, d?.level))}</div></td>
+        <td class="col-trigger row-action"><div class="triggerCellWrap">${renderTriggerButton(isStateOn(d?.state, d?.level))}</div></td>
+        <td class="col-remove"><button class="delBtn" type="button">Remove</button></td>
+      </tr>
+    `;
+  }
+
+  function rowTemplateTrigger(d){
+    const devName = d?.deviceName || d?.name || '';
+    const group = d?.group ?? '';
+    const actionSelector = d?.actionSelector ?? '';
+    return `
+      <tr>
+        <td><input class="deviceName" placeholder="Entity name" value="${devName}" /></td>
+        <td><input class="triggerGroup small" inputmode="numeric" placeholder="0" value="${group}" /></td>
+        <td><input class="actionSelector small" inputmode="numeric" placeholder="0" value="${actionSelector}" /></td>
+        <td class="col-trigger"><div class="triggerCellWrap">${renderTriggerButton(false)}</div></td>
         <td class="col-remove"><button class="delBtn" type="button">Remove</button></td>
       </tr>
     `;
@@ -1197,6 +1240,12 @@
         throw { kind: 'fieldValidation', fieldName, fieldValue: t, deviceLabel };
       return n;
     };
+    const parseTriggerGroupStrict = (raw, deviceLabel) => {
+      const n = parseByteStrict(raw, 'Trigger Group', deviceLabel);
+      if (n > 254)
+        throw { kind: 'fieldValidation', fieldName: 'Trigger Group', fieldValue: raw, deviceLabel };
+      return n;
+    };
     document.querySelectorAll('#controlBody tr').forEach(tr => {
       const deviceName = tr.querySelector('.deviceName')?.value?.trim() ?? '';
       const deviceLabel = deviceName;
@@ -1204,7 +1253,7 @@
       const appRaw = tr.querySelector('.app')?.value ?? '';
       const groupRaw = tr.querySelector('.group')?.value ?? '';
       if (!hasAny(deviceName, deviceType, appRaw, groupRaw)) return;
-      const app = parseByteStrict(appRaw, 'App', deviceLabel);
+      const app = parseByteStrict(appRaw, 'Application', deviceLabel);
       const group = parseByteStrict(groupRaw, 'Group', deviceLabel);
       rows.push({
         function: 'control',
@@ -1235,7 +1284,7 @@
       const appRaw = tr.querySelector('.app')?.value ?? '';
       const groupRaw = tr.querySelector('.group')?.value ?? '';
       if (!hasAny(deviceName, appRaw, groupRaw)) return;
-      const app = parseByteStrict(appRaw, 'App', deviceLabel);
+      const app = parseByteStrict(appRaw, 'Application', deviceLabel);
       const group = parseByteStrict(groupRaw, 'Group', deviceLabel);
       rows.push({
         function: 'binary_sensor',
@@ -1286,7 +1335,7 @@
       const controlType = tr.querySelector('.controlType')?.value?.trim() ?? '';
       const pulseRaw = tr.querySelector('.pulse')?.value ?? '';
       if (!hasAny(deviceName, deviceType, appRaw, groupRaw, controlType, pulseRaw)) return;
-      const app = parseByteStrict(appRaw, 'App', deviceLabel);
+      const app = parseByteStrict(appRaw, 'Application', deviceLabel);
       const group = parseByteStrict(groupRaw, 'Group', deviceLabel);
       rows.push({
         function: 'shutter',
@@ -1299,6 +1348,7 @@
         pulseSeconds: toNumOrDefault(pulseRaw, 0.25)
       });
     });
+    rows.push(...preservedTriggerControls);
     return rows;
   }
 
@@ -1311,6 +1361,7 @@
     binaryBody.innerHTML = '';
     measBody.innerHTML = '';
     shutterBody.innerHTML = '';
+    preservedTriggerControls = [];
 
     const rows = Array.isArray(list) ? list : [];
     for (const d of rows){
@@ -1319,6 +1370,7 @@
       else if (f === 'binary_sensor') binaryBody.insertAdjacentHTML('beforeend', rowTemplateBinary(d));
       else if (f === 'measurement') measBody.insertAdjacentHTML('beforeend', rowTemplateMeas(d));
       else if (f === 'shutter') shutterBody.insertAdjacentHTML('beforeend', rowTemplateShutter(d));
+      else if (f === 'trigger') preservedTriggerControls.push(d);
     }
 
     document.querySelectorAll('#measBody tr').forEach(applyMeasurementVoltageVisibility);
@@ -1340,6 +1392,7 @@
     show('.col-binary', func === 'binary_sensor');
     show('.col-measure', func === 'measurement');
     show('.col-shutter', func === 'shutter');
+    show('.col-trigger-config', func === 'trigger');
     show('.col-time', func === 'time');
   }
 
@@ -1490,6 +1543,24 @@
   }
 
   async function triggerRow(tr){
+    if (tr.closest('#triggerBody')){
+      const triggerGroup = Number(tr.querySelector('.triggerGroup')?.value || NaN);
+      const actionSelector = Number(tr.querySelector('.actionSelector')?.value || NaN);
+      if (!Number.isFinite(triggerGroup) || !Number.isFinite(actionSelector)) return;
+      try{
+        setTriggerState(tr, true);
+        await fetch('/control/trigger', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ triggerGroup, actionSelector })
+        });
+      }catch{
+        // ignore trigger errors in UI; saved validation handles configured values.
+      }finally{
+        setTimeout(() => setTriggerState(tr, false), 350);
+      }
+      return;
+    }
     const app = Number(tr.querySelector('.app')?.value || NaN);
     const group = Number(tr.querySelector('.group')?.value || NaN);
     if (!Number.isFinite(app) || !Number.isFinite(group)) return;
@@ -1622,7 +1693,8 @@
       control: 'Bulk Add Control Devices',
       binary_sensor: 'Bulk Add Binary Sensors',
       measurement: 'Bulk Add Measurement Sensors',
-      shutter: 'Bulk Add Shutters'
+      shutter: 'Bulk Add Shutters',
+      trigger: 'Bulk Add Trigger Control'
     };
     document.getElementById('bulkDialogTitle').textContent = titleByKind[kind] || 'Bulk Add';
 
@@ -1637,12 +1709,16 @@
     const isControl = kind === 'control';
     const isBinary = kind === 'binary_sensor';
     const isShutter = kind === 'shutter';
+    const isTrigger = kind === 'trigger';
 
     setVisible('.bulk-common', !isMeas);
+    setVisible('.bulk-app-field', !isMeas && !isTrigger);
+    setVisible('.bulk-start-field', !isMeas);
     setVisible('.bulk-control', isControl);
     setVisible('.bulk-binary', isBinary);
     setVisible('.bulk-measurement', isMeas);
     setVisible('.bulk-shutter', isShutter);
+    setVisible('.bulk-trigger', isTrigger);
 
     if (!isMeas) {
       document.getElementById('bulkAppInput').value = '56';
@@ -1657,6 +1733,7 @@
     document.getElementById('bulkShutterTypeInput').value = 'shutter';
     document.getElementById('bulkShutterControlTypeInput').value = 'up_down_off';
     document.getElementById('bulkShutterPulseInput').value = '0.25';
+    document.getElementById('bulkTriggerActionInput').value = '0';
     applyBulkMeasurementVoltageVisibility();
 
     if (typeof dlg.showModal === 'function') dlg.showModal();
@@ -1776,7 +1853,9 @@
       }
       closeBulkDialog();
       markDirty('shutter');
+      return;
     }
+
   }
 
   document.getElementById('addControlBtn').addEventListener('click', () => {
