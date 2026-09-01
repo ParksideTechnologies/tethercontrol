@@ -283,6 +283,7 @@
 (() => {
   const APP_VERSION = '{{APP_VERSION}}';
   let initialAreaScenesBootstrap = {{INITIAL_AREA_SCENES_JSON}};
+  let initialAreaSceneStatusBootstrap = {{INITIAL_AREA_SCENE_STATUS_JSON}};
   let areas = [];
   let dirty = false;
   let pendingRemove = null;
@@ -337,6 +338,12 @@
   function triggerButtonHtml(mode, isOn){
     const label = isOn ? 'Turn off' : 'Turn on';
     return `<button class="triggerBtn ${isOn ? 'is-on' : ''}" type="button" title="${label}" aria-pressed="${isOn ? 'true' : 'false'}"><span class="toggle-thumb"></span></button>`;
+  }
+
+  function areaSceneStateKey(area){
+    const mode = ((area?.mode || 'scene').toString().toLowerCase() === 'area') ? 'area' : 'scene';
+    if (mode === 'area') return `area:${Number(area?.app || 0)}:${Number(area?.group || 0)}`;
+    return `scene:${Number(area?.triggerGroup || 0)}:${Number(area?.actionSelector || 0)}`;
   }
 
   function rampOptions(selected){
@@ -408,7 +415,7 @@
     const sortState = childSortState.get(index) || {};
     const sortClass = key => sortState.key === key ? (sortState.dir === 1 ? ' sorted-asc' : ' sorted-desc') : '';
     return `
-      <div class="area-card ${collapsed ? 'collapsed' : ''}" data-index="${index}" data-mode="${mode}">
+      <div class="area-card ${collapsed ? 'collapsed' : ''}" data-index="${index}" data-mode="${mode}" data-state-key="${escapeHtml(areaSceneStateKey(area))}">
         <div class="parent-grid">
           <div class="parent-name">
             <label>${mode === 'area' ? 'Area Address Name' : 'Scene Name'}</label>
@@ -658,6 +665,35 @@
     render();
     clearDirty();
     return true;
+  }
+
+  function applyAreaSceneStatusSnapshot(snapshot){
+    const list = Array.isArray(snapshot?.areas) ? snapshot.areas : [];
+    const byKey = new Map(list.map(item => [String(item.key || ''), !!item.isOn]));
+    document.querySelectorAll('.area-card[data-state-key]').forEach(card => {
+      const key = card.getAttribute('data-state-key') || '';
+      if (!byKey.has(key)) return;
+      const btn = card.querySelector('.parent-fire .triggerBtn');
+      if (!btn || btn.disabled) return;
+      setTriggerButtonState(btn, byKey.get(key));
+    });
+  }
+
+  async function loadAreaSceneStatus(){
+    try{
+      const boot = initialAreaSceneStatusBootstrap;
+      initialAreaSceneStatusBootstrap = null;
+      if (boot){
+        applyAreaSceneStatusSnapshot(boot);
+        return;
+      }
+      const r = await fetch('/config/area-scenes/status', { cache: 'no-store' });
+      if (!r.ok) return;
+      const snapshot = await r.json();
+      applyAreaSceneStatusSnapshot(snapshot);
+    }catch{
+      // ignore status refresh errors; the next poll will correct the display.
+    }
   }
 
   async function loadControlsForAutocomplete(){
@@ -1263,8 +1299,10 @@
     initialAreaScenesBootstrap = null;
     areas = Array.isArray(boot?.areas) ? boot.areas : [];
     render();
+    await loadAreaSceneStatus();
     clearDirty();
     updateLicenceWarning();
+    setInterval(loadAreaSceneStatus, 1000);
     setInterval(updateLicenceWarning, 1000);
   })();
 })();
