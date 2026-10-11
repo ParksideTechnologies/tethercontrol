@@ -10,8 +10,6 @@ ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 
 WORKDIR /app
 COPY TCBin /app/TCBin
-COPY icon.png /app/icon.png
-COPY UI /app/UI
 COPY run.sh /run.sh
 RUN chmod a+x /run.sh /app/TCBin
 

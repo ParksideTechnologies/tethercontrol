@@ -1,5 +1,16 @@
 # Changelog
 
+## V2.3.0 - 2026-10-11
+
+- Improved Area & Scene Setup sorting, validation and unsaved-change handling.
+- Added clearer validation messages when group addresses, area addresses or scenes conflict.
+- Improved control testing so changed configuration must be saved before testing.
+- Improved configuration saving reliability and protection against conflicting changes from multiple browser sessions.
+- Improved Home Assistant MQTT recovery after broker disconnects, including entity state refresh and cleanup after devices are renamed or removed.
+- Improved scene-state reliability when commands arrive together.
+- Improved measurement sensor recovery and device availability reporting.
+- Updated diagnostic wording for Network Connection status.
+
 ## 2.2.1 - 2026-09-01
 - Improved Area & Scene Setup toggle states so they stay in sync with Home Assistant and C-Bus activity.
 - Improved scene indicator handling when Tether Control scenes are triggered from C-Bus units.

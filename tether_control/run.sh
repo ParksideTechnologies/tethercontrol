@@ -15,10 +15,6 @@ DATA_BIN="/data/TCBin"
 
 cp -f "${APP_BIN}" "${DATA_BIN}"
 chmod +x "${DATA_BIN}"
-rm -rf /data/UI
-if [ -d /app/UI ]; then
-  cp -a /app/UI /data/UI
-fi
 
 export ASPNETCORE_URLS="http://0.0.0.0:${UI_PORT}"
 export Logging__LogLevel__Default="Information"

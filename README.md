@@ -1,11 +1,11 @@
 # Tether Control
 
-Tether Control is a Home Assistant add-on for connecting a C-Bus installation to Home Assistant.
+Tether Control connects a C-Bus installation to Home Assistant.
 
-It provides a built-in web interface for setting up C-Bus groups, MQTT integration, diagnostics, and basic system tools.
+Use its built-in web interface to configure groups, areas and scenes, MQTT integration, diagnostics, and configuration import/export.
 
 ## Notes
 
 - A valid licence key is required for Tether Control V2.0.0 and later.
 - Back up Home Assistant before migrating an existing installation.
-- Configuration is managed from the add-on web interface after installation.
+- Configuration is managed from the app's web interface after installation.
