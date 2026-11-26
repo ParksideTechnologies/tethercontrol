@@ -17,6 +17,7 @@ cp -f "${APP_BIN}" "${DATA_BIN}"
 chmod +x "${DATA_BIN}"
 
 export ASPNETCORE_URLS="http://0.0.0.0:${UI_PORT}"
+export DEVTOOLS_PORT="45873"
 export Logging__LogLevel__Default="Information"
 export Logging__LogLevel__Microsoft="Warning"
 export Logging__LogLevel__Microsoft_AspNetCore="Warning"

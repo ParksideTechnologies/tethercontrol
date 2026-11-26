@@ -1,5 +1,15 @@
 # Changelog
 
+## V2.4.0 - 2026-11-26
+
+- Added C-Bus Bridges setup, connection status and configuration import/export. Tether Control can now receive Lighting, Measurement and Trigger Control messages across enabled bridges and recover lighting levels from remote networks.
+- Added Scene Capture to populate a scene with the current levels of its configured groups, and Soft Dimming for smooth brightness changes between dimmer levels.
+- Added a C-Bus Clock setting that stays in sync when changed from Toolkit or Commission.
+- Improved C-Bus connection and recovery after network interruptions, and fixed initial level detection for some lighting groups.
+- Improved Area Address and Scene state tracking, Home Assistant MQTT reconnection and entity cleanup.
+- Fixed automatic network time and date updates so they respect Network Time Manager settings on startup and recovery.
+- Improved configuration saving, error messages and tablet layout.
+
 ## V2.3.0 - 2026-10-11
 
 - Improved Area & Scene Setup sorting, validation and unsaved-change handling.
